@@ -47,6 +47,11 @@ header {
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(8px);
 }
+/* Senza questa riga l'intestazione resta visibile anche quando le mettiamo
+ * l'attributo "hidden": la regola display:flex qui sopra, essendo dell'autore,
+ * ha la meglio sul display:none previsto dal browser. */
+header[hidden] { display: none; }
+
 header h1 {
   margin: 0; font-size: 1.05rem; font-weight: 700;
   letter-spacing: .06em; color: var(--gold);

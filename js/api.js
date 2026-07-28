@@ -87,10 +87,19 @@ export async function esci() {
 // Accampamenti
 // ------------------------------------------------------------------
 
-export async function mieiAccampamenti() {
+/**
+ * Gli accampamenti a cui appartiene una persona.
+ *
+ * Il filtro su user_id e' indispensabile: le policy permettono di leggere
+ * tutte le iscrizioni dei gruppi di cui si fa parte (serve per l'elenco dei
+ * membri), quindi senza filtro un accampamento con tre membri tornerebbe tre
+ * volte, per giunta con i ruoli altrui.
+ */
+export async function mieiAccampamenti(userId) {
   const { data, error } = await client()
     .from('membri')
     .select('ruolo, nome_visualizzato, accampamenti(id, nome, edizione, codice_invito, modalita)')
+    .eq('user_id', userId)
     .order('entrato_il', { ascending: true });
   esplodi(error);
   return (data || [])

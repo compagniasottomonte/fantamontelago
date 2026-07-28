@@ -12,7 +12,7 @@ let elenco = [];
 let caricato = false;
 
 export async function carica() {
-  elenco = await api.mieiAccampamenti();
+  elenco = await api.mieiAccampamenti(stato.utente.id);
   caricato = true;
 }
 
