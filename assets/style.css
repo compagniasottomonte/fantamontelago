@@ -269,6 +269,10 @@ button.icon { padding: 6px 10px; font-size: .85rem; }
  * invece di sbordare. */
 .row > button { white-space: normal; min-width: 0; }
 
+/* Quando un'etichetta va a capo, il pulsante accanto deve crescere con lei
+ * invece di restare basso e disallineato. */
+.row.pari { align-items: stretch; }
+
 .riga-camp {
   display: flex; width: 100%; text-align: left; align-items: center;
   gap: 10px; background: var(--card);

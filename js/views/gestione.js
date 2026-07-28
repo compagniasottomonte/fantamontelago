@@ -55,8 +55,8 @@ export function render() {
     <h2>Account</h2>
     <div class="card">
       <p class="muted">Sei entrato come ${esc(stato.utente.email)}.</p>
-      <div class="row wrap mt">
-        <button class="grow" data-act="cambia-camp">Cambia accampamento</button>
+      <div class="row wrap pari mt">
+        <button class="grow" data-act="cambia-camp">Cambia<br>accampamento</button>
         <button class="grow ghost" data-act="logout">Esci</button>
       </div>
       <div class="sep"></div>
