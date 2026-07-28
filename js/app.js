@@ -17,6 +17,7 @@ import * as vSegna from './views/segna.js';
 import * as vDiario from './views/diario.js';
 import * as vProposte from './views/proposte.js';
 import * as vGestione from './views/gestione.js';
+import { piePagina } from './views/info.js';
 
 const SCHEDE = [
   { id: 'classifica', icona: '🏆', titolo: 'Classifica', vista: vClassifica },
@@ -42,7 +43,9 @@ function disegna() {
   const scheda = SCHEDE.find((s) => s.id === stato.vista) || SCHEDE[0];
   document.body.classList.add('con-nav');
   intestazione(stato.dati.accampamento.nome, stato.dati.accampamento.edizione);
-  app().innerHTML = scheda.vista.render();
+  // Il richiamo al fatto che non sia l'app ufficiale chiude ogni schermata,
+  // non solo quella dei crediti.
+  app().innerHTML = scheda.vista.render() + piePagina();
   navigazione();
   risolviFoto();
 }

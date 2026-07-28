@@ -19,7 +19,8 @@ quindi mettine uno solo per volta.
 > vicenda: +15 se dormi in tenda tutte le notti, −15 se finisci nella cloaca,
 > −100 se fai il Ben10.
 > Foto-prova obbligatoria, arbitro che decide, classifica finale.
-> Gratis, non si installa niente:
+> Gratis, non si installa niente.
+> (Roba fatta dai fan per i fan, non è l'app ufficiale del festival.)
 > https://compagniasottomonte.github.io/fantamontelago/guida.html
 
 ---
@@ -39,6 +40,9 @@ quindi mettine uno solo per volta.
 > È gratis, funziona dal browser del telefono e non c'è niente da installare.
 > Vi serve solo un codice per entrare tutti nello stesso accampamento.
 >
+> Chiariamolo subito: **non è l'app ufficiale del festival**. È un gioco fatto
+> dai fan per i fan, l'organizzazione non c'entra niente.
+>
 > Come funziona 👉
 > https://compagniasottomonte.github.io/fantamontelago/guida.html
 
@@ -54,7 +58,10 @@ quindi mettine uno solo per volta.
 > completamente separato dal nostro, non vedete i nostri dati e noi non vediamo
 > i vostri.
 >
-> Ci sono già dentro 49 regole pronte, ma potete riscriverle tutte con le vostre.
+> Ci sono già dentro 50 regole pronte, ma potete riscriverle tutte con le vostre.
+>
+> È un progetto amatoriale, fatto dai fan per i fan: niente a che vedere con
+> l'organizzazione del festival.
 >
 > Ci vogliono due minuti per partire:
 > https://compagniasottomonte.github.io/fantamontelago/guida.html
@@ -87,6 +94,9 @@ quindi mettine uno solo per volta.
 > Gratis, per tutti, link in bio.
 > Fatta con amore (e poco sonno) da @madstoryteller11
 > per @compagnia_di_sotto_monte
+>
+> ⚠️ Progetto amatoriale, dai fan per i fan: non è l'app ufficiale del
+> Montelago Celtic Festival, l'organizzazione non c'entra nulla.
 
 ---
 

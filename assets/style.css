@@ -200,6 +200,14 @@ h2.giorno { text-transform: none; letter-spacing: .02em; font-size: 1.1rem; }
 
 .empty { text-align: center; color: var(--dim); padding: 40px 16px; }
 
+/* Ripetuta in fondo a ogni schermata: deve leggersi, non gridare. */
+.non-ufficiale {
+  text-align: center; color: var(--dim);
+  font-size: .74rem; line-height: 1.4;
+  margin: 26px auto 4px; max-width: 34em;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+
 /* ---------- liste ---------- */
 
 .item {

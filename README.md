@@ -9,6 +9,11 @@ Creata da **MadStoryteller11** per **La Compagnia di Sotto Monte** —
 App gratuita, nata per passione e per divertimento nel tempo libero. Può avere
 malfunzionamenti. Per segnalazioni o interesse: <compagniasottomonte@gmail.com>
 
+> **Progetto amatoriale, fatto dai fan per i fan.** Non è l'app ufficiale del
+> Montelago Celtic Festival e non ha alcun legame con chi lo organizza, che non
+> c'entra niente con questo gioco e non ne è in alcun modo responsabile. Il nome
+> del festival appartiene ai suoi legittimi proprietari.
+
 Ogni clan crea il proprio accampamento privato, ci carica dentro le persone che
 lo compongono e per tutto il festival assegna bonus e malus con tanto di
 foto-prova. La classifica si aggiorna in tempo reale e il diario racconta il

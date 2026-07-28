@@ -22,6 +22,37 @@ export function stemma(classe = 'stemma') {
                alt="La Compagnia di Sotto Monte" width="2160" height="2160">`;
 }
 
+/**
+ * Il festival e' una manifestazione vera, con un nome che non e' nostro: va
+ * detto chiaramente e in piu' punti che questo gioco non c'entra niente con
+ * chi lo organizza.
+ */
+export function nonUfficiale() {
+  return `
+    <div class="card avviso">
+      <h3>⚠️ Non è l'app ufficiale</h3>
+      <p>
+        Fanta Montelago è un <b>progetto amatoriale, fatto dai fan per i fan</b>.
+        Non ha alcun legame con l'organizzazione del Montelago Celtic Festival,
+        che non c'entra niente con questo gioco e non ne è in alcun modo
+        responsabile.
+      </p>
+      <p class="muted">
+        Il nome del festival appartiene ai suoi legittimi proprietari: qui è
+        citato solo per dire di cosa stiamo parlando.
+      </p>
+    </div>`;
+}
+
+/** Riga breve, ripetuta in fondo a ogni schermata dell'app. */
+export function piePagina() {
+  return `
+    <p class="non-ufficiale">
+      Progetto amatoriale dei fan, senza alcun legame con l'organizzazione del
+      Montelago Celtic Festival.
+    </p>`;
+}
+
 /** Presentazione, avvertenza sulla connessione e crediti. */
 export function introduzione() {
   return `
@@ -42,6 +73,8 @@ export function introduzione() {
       </p>
       <a class="link-guida" href="guida.html">📖 Guida: come si gioca</a>
     </div>
+
+    ${nonUfficiale()}
 
     <div class="card avviso">
       <h3>📶 Serve internet</h3>
@@ -93,6 +126,11 @@ export function crediti() {
         nel tempo libero e senza nessuna azienda dietro. Proprio per questo può
         capitare che qualcosa non funzioni come dovrebbe: se succede, portate
         pazienza.
+      </p>
+      <p class="muted">
+        È un <b>progetto amatoriale, fatto dai fan per i fan</b>: non è l'app
+        ufficiale del Montelago Celtic Festival e non ha alcun legame con chi
+        lo organizza.
       </p>
       <p class="muted">
         Se il gioco vi piace e vi piacerebbe vederlo crescere, scrivete a
