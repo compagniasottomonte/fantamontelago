@@ -29,6 +29,21 @@ function esplodi(errore) {
   if (/secret API key/i.test(m)) {
     throw new Error('Hai inserito la chiave segreta invece di quella pubblica (anon)');
   }
+  // Il servizio email incluso in Supabase manda pochissimi messaggi all'ora:
+  // senza una spiegazione chiara sembra che l'app sia rotta.
+  if (/rate limit/i.test(m)) {
+    throw new Error('Troppe email richieste in poco tempo. Aspetta un\'oretta e riprova: è un limite di Supabase, non un guasto.');
+  }
+  if (/only request this after (\d+)/i.test(m)) {
+    const secondi = m.match(/after (\d+)/i)[1];
+    throw new Error(`Aspetta ${secondi} secondi prima di richiedere un altro link.`);
+  }
+  if (/Email not confirmed/i.test(m)) {
+    throw new Error('Devi prima aprire il link di conferma che ti è arrivato per email');
+  }
+  if (/Failed to fetch|NetworkError/i.test(m)) {
+    throw new Error('Nessuna connessione. Riprova quando ti torna la linea.');
+  }
   if (m.includes('row-level security')) {
     throw new Error('Non hai i permessi per questa operazione');
   }
