@@ -134,7 +134,18 @@ function sezionePersonaggi(personaggi) {
 }
 
 function sezioneRegole(regole) {
-  const riga = (r) => `
+  // Le regole di bandiera si mostrano con il lucchetto invece dei comandi:
+  // il database le rifiuterebbe comunque, ma un pulsante che non fa niente
+  // sembrerebbe un guasto.
+  const riga = (r) => r.protetta ? `
+    <div class="item">
+      <span class="grow">
+        ${esc(r.nome)}
+        <div class="muted">🔒 regola fissa</div>
+      </span>
+      ${punti(r.punti)}
+    </div>`
+  : `
     <div class="item">
       <span class="grow ${r.attiva ? '' : 'spento'}">${esc(r.nome)}</span>
       <input class="mini" type="number" value="${r.punti}" data-campo="punti-regola" data-id="${r.id}">
@@ -168,7 +179,11 @@ function sezioneRegole(regole) {
     </div>
     <div class="card">
       ${regole.filter((r) => r.punti < 0).map(riga).join('') || '<div class="muted">Nessun malus.</div>'}
-    </div>`;
+    </div>
+    <p class="muted">
+      🔒 Le regole con il lucchetto sostengono il progetto e restano in tutti
+      gli accampamenti: non si possono cancellare né modificare.
+    </p>`;
 }
 
 const val = (id) => (document.getElementById(id)?.value || '').trim();

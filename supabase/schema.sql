@@ -52,6 +52,7 @@ create table if not exists public.regole (
   nome             text not null check (length(trim(nome)) between 2 and 120),
   punti            integer not null check (punti between -100 and 100),
   attiva           boolean not null default true,
+  protetta         boolean not null default false,
   creato_il        timestamptz not null default now()
 );
 
@@ -80,6 +81,7 @@ create table if not exists public.eventi (
 -- questo schema in passato: "create table if not exists" lascia intatte le
 -- tabelle che esistono, quindi le novita' vanno applicate a parte.
 alter table public.accampamenti add column if not exists premio text not null default '';
+alter table public.regole add column if not exists protetta boolean not null default false;
 
 create index if not exists eventi_accampamento_idx on public.eventi (accampamento_id, stato);
 create index if not exists eventi_personaggio_idx  on public.eventi (personaggio_id);
@@ -278,10 +280,30 @@ drop policy if exists reg_select on public.regole;
 create policy reg_select on public.regole
   for select to authenticated using (public.is_membro(accampamento_id));
 
+-- Le regole si scrivono solo da arbitro, e quelle protette non si toccano
+-- affatto. Il divieto sta qui e non solo nell'interfaccia, cosi' non lo si
+-- aggira dalla console del browser.
+--
+-- La RLS non vale per le cancellazioni a cascata ne' per le funzioni
+-- SECURITY DEFINER: eliminare un accampamento e ripristinare il regolamento
+-- continuano quindi a funzionare senza eccezioni particolari.
 drop policy if exists reg_write on public.regole;
-create policy reg_write on public.regole
-  for all to authenticated
-  using (public.is_arbitro(accampamento_id)) with check (public.is_arbitro(accampamento_id));
+
+drop policy if exists reg_insert on public.regole;
+create policy reg_insert on public.regole
+  for insert to authenticated
+  with check (public.is_arbitro(accampamento_id) and not protetta);
+
+drop policy if exists reg_update on public.regole;
+create policy reg_update on public.regole
+  for update to authenticated
+  using (public.is_arbitro(accampamento_id) and not protetta)
+  with check (public.is_arbitro(accampamento_id) and not protetta);
+
+drop policy if exists reg_delete on public.regole;
+create policy reg_delete on public.regole
+  for delete to authenticated
+  using (public.is_arbitro(accampamento_id) and not protetta);
 
 -- --- eventi ---
 drop policy if exists evt_select on public.eventi;
@@ -384,6 +406,7 @@ language sql immutable as $$
     ('Ripara',                                                5),
     ('Ricercato su Spottedmontelago',                        10),
     ('Pubblicità alla Compagnia di Sotto Monte sui social',   5),
+    ('Fai pubblicità al Fanta Montelago sui social',          5),
     ('Caduto nella Cloaca',                                 -15),
     ('Scottato',                                             -5),
     ('Portato una nuova Persona all''accampamento',           5),
@@ -399,6 +422,18 @@ language sql immutable as $$
   ) as t(nome, punti);
 $$;
 
+-- Le due regole promozionali restano in ogni accampamento: nessun arbitro puo'
+-- cancellarle, disattivarle o cambiarne il punteggio. Sono elencate qui in un
+-- posto solo, cosi' le policy, la semina e il ripristino guardano tutte la
+-- stessa lista.
+create or replace function public.regola_protetta(n text)
+returns boolean language sql immutable as $$
+  select n in (
+    'Pubblicità alla Compagnia di Sotto Monte sui social',
+    'Fai pubblicità al Fanta Montelago sui social'
+  );
+$$;
+
 -- Catalogo iniziale, applicato alla nascita dell'accampamento.
 -- Idempotente: se le regole ci sono gia' non tocca niente.
 create or replace function public.semina_regole(camp uuid)
@@ -412,8 +447,9 @@ begin
     return;
   end if;
 
-  insert into public.regole (accampamento_id, nome, punti)
-  select camp, b.nome, b.punti from public.regole_base() b;
+  insert into public.regole (accampamento_id, nome, punti, protetta)
+  select camp, b.nome, b.punti, public.regola_protetta(b.nome)
+  from public.regole_base() b;
 end $$;
 
 grant execute on function public.semina_regole(uuid) to authenticated;
@@ -433,8 +469,9 @@ begin
 
   delete from public.regole where accampamento_id = camp;
 
-  insert into public.regole (accampamento_id, nome, punti)
-  select camp, b.nome, b.punti from public.regole_base() b;
+  insert into public.regole (accampamento_id, nome, punti, protetta)
+  select camp, b.nome, b.punti, public.regola_protetta(b.nome)
+  from public.regole_base() b;
 
   get diagnostics quante = row_count;
   return quante;
@@ -442,6 +479,23 @@ end $$;
 
 revoke all on function public.ricarica_regole_base(uuid) from public;
 grant execute on function public.ricarica_regole_base(uuid) to authenticated;
+
+-- Adeguamento degli accampamenti gia' esistenti: aggiunge la regola
+-- promozionale nuova dove manca e marca come protette quelle di bandiera,
+-- riattivandole se qualcuno le aveva spente.
+insert into public.regole (accampamento_id, nome, punti, protetta)
+select a.id, 'Fai pubblicità al Fanta Montelago sui social', 5, true
+from public.accampamenti a
+where not exists (
+  select 1 from public.regole r
+  where r.accampamento_id = a.id
+    and r.nome = 'Fai pubblicità al Fanta Montelago sui social'
+);
+
+update public.regole
+set protetta = true, attiva = true
+where public.regola_protetta(nome)
+  and not (protetta and attiva);
 
 -- Creazione dell'accampamento in un blocco unico.
 --

@@ -26,8 +26,13 @@ festival giornata per giornata.
 - L'arbitro può indicare un **premio in palio** (facoltativo), che compare in
   cima alla classifica per tutti.
 
+Due regole promozionali — la pubblicità alla Compagnia e quella al Fanta
+Montelago — sono **protette**: nessun arbitro può cancellarle, disattivarle o
+cambiarne il punteggio. Il divieto è nelle policy del database, non solo
+nell'interfaccia. L'elenco sta in `regola_protetta()`.
+
 Ogni nuovo accampamento nasce già col **regolamento ufficiale della Compagnia**
-(49 fra bonus e malus, definiti in `regole_base()` dentro
+(50 fra bonus e malus, definiti in `regole_base()` dentro
 [`supabase/schema.sql`](supabase/schema.sql)). L'arbitro può modificarne i
 punteggi, disattivarne, aggiungerne di propri, e in qualsiasi momento rimettere
 tutto com'era col pulsante *Ripristina il regolamento ufficiale*. I punteggi
