@@ -52,6 +52,12 @@ header {
  * ha la meglio sul display:none previsto dal browser. */
 header[hidden] { display: none; }
 
+/* Lo stesso mago dell'icona, in piccolo accanto al nome dell'accampamento. */
+.marchio {
+  flex: 0 0 40px; width: 40px; height: 40px;
+  border-radius: 10px; object-fit: contain;
+}
+
 header h1 {
   margin: 0; font-size: 1.05rem; font-weight: 700;
   letter-spacing: .06em; color: var(--gold);
@@ -115,13 +121,15 @@ main { max-width: 820px; margin: 0 auto; padding: 16px; }
 }
 .dona:hover { background: var(--gold2); }
 
-.link-guida {
+.link-guida, summary.tasto {
   display: block; text-align: center; text-decoration: none;
   border: 1px solid var(--gold); color: var(--gold2);
-  padding: 11px 14px; border-radius: 10px; margin: 12px 0 4px;
+  padding: 11px 14px; border-radius: 10px;
   font-weight: 600;
 }
-.link-guida:hover { background: var(--card2); }
+.link-guida { margin: 12px 0 4px; }
+.link-guida:hover, summary.tasto:hover { background: var(--card2); }
+details[open] > summary.tasto { border-radius: 10px 10px 0 0; }
 
 .crediti .muted.centrato { text-align: center; }
 

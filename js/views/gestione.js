@@ -36,7 +36,7 @@ export function render() {
 
     ${sezionePremio(a, arbitro)}
     ${arbitro ? sezionePersonaggi(personaggi) : elencoPersonaggi(personaggi)}
-    ${arbitro ? sezioneRegole(regole) : ''}
+    ${arbitro ? sezioneRegole(regole) : elencoRegole(regole)}
 
     <h2>Membri (${membri.length})</h2>
     <div class="card">
@@ -131,6 +131,38 @@ function sezionePersonaggi(personaggi) {
           <button class="icon danger" data-act="del-personaggio" data-id="${p.id}">✕</button>
         </div>`).join('')}
     </div>` : '<div class="empty">Nessun personaggio: aggiungi le persone del tuo clan.</div>'}`;
+}
+
+/**
+ * Il regolamento in sola lettura, per chi non arbitra. Ogni accampamento se lo
+ * scrive da se', quindi senza questo elenco un giocatore potrebbe conoscerlo
+ * solo scorrendo il menu a tendina mentre segna.
+ */
+function elencoRegole(regole) {
+  const attive = regole.filter((r) => r.attiva);
+  const riga = (r) => `
+    <div class="item">
+      <span class="grow">${esc(r.nome)}${r.protetta ? ' 🔒' : ''}</span>
+      ${punti(r.punti)}
+    </div>`;
+
+  const bonus = attive.filter((r) => r.punti >= 0);
+  const malus = attive.filter((r) => r.punti < 0).sort((a, b) => a.punti - b.punti);
+
+  return `
+    <h2>Regolamento</h2>
+    <details class="card">
+      <summary class="tasto">📜 Vedi le ${attive.length} regole dell'accampamento</summary>
+      <div class="sep"></div>
+      <h3>Bonus (${bonus.length})</h3>
+      ${bonus.map(riga).join('') || '<div class="muted">Nessun bonus.</div>'}
+      <div class="sep"></div>
+      <h3>Malus (${malus.length})</h3>
+      ${malus.map(riga).join('') || '<div class="muted">Nessun malus.</div>'}
+      <p class="muted mt">
+        Le regole le decide l'arbitro: ogni accampamento ha le sue.
+      </p>
+    </details>`;
 }
 
 function sezioneRegole(regole) {

@@ -59,6 +59,7 @@ function intestazione(titolo, sottotitolo) {
   if (!titolo) { el.hidden = true; return; }
   el.hidden = false;
   el.innerHTML = `
+    <img class="marchio" src="assets/icona-app-192.png" alt="" width="192" height="192">
     <div class="grow">
       <h1>${esc(titolo)}</h1>
       <div class="sub">${esc(sottotitolo || '')}</div>
