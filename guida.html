@@ -1,0 +1,236 @@
+<!doctype html>
+<!-- Nome:     guida.html                                                   -->
+<!-- Versione: 1.0                                                          -->
+<!-- Uso:      Guida pubblica a Fanta Montelago: come entra un giocatore,   -->
+<!--           come prepara l'accampamento un arbitro, a cosa servono le    -->
+<!--           schede e risposte alle domande piu' frequenti. Pagina        -->
+<!--           statica, pensata per essere condivisa come link.             -->
+<!-- Autore:   Daniele Polucci                                              -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1d14">
+  <meta name="description" content="Come si gioca a Fanta Montelago: la guida per giocatori e arbitri.">
+  <title>Fanta Montelago — Come si gioca</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" type="image/png" href="assets/icona-app-192.png">
+  <style>
+    .passo { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .passo:last-child { border-bottom: none; }
+    .passo .n {
+      flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
+      display: grid; place-items: center; font-weight: 700; font-size: .9rem;
+      background: var(--gold); color: #20160a;
+    }
+    .passo .testo { flex: 1; min-width: 0; }
+    .passo b { display: block; margin-bottom: 2px; }
+    .passo p { margin: 0; color: var(--dim); font-size: .9rem; }
+    .scheda { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; }
+    .scheda .ic { font-size: 1.5rem; flex: 0 0 32px; text-align: center; }
+    details.faq { border-bottom: 1px solid var(--line); padding: 12px 0; }
+    details.faq:last-child { border-bottom: none; }
+    details.faq summary { font-weight: 600; }
+    details.faq summary::after { content: ' ›'; color: var(--gold); }
+    details.faq[open] summary::after { content: ' ⌄'; }
+    details.faq p { color: var(--dim); font-size: .92rem; margin: 8px 0 0; }
+    .apri {
+      display: block; text-align: center; text-decoration: none;
+      background: var(--gold); color: #20160a; font-weight: 700;
+      padding: 15px; border-radius: 10px; font-size: 1.05rem;
+    }
+    .apri:hover { background: var(--gold2); }
+  </style>
+</head>
+<body>
+
+<main>
+
+  <div class="hero">
+    <img class="logo-app" src="assets/logo-app.png" alt="Fanta Montelago" width="340" height="373">
+    <p class="muted">Come si gioca</p>
+  </div>
+
+  <div class="card">
+    <h3>In due parole</h3>
+    <p>
+      È il fantacalcio del Montelago Celtic Festival. Il tuo gruppo crea un
+      <b>accampamento</b> privato, ci mette dentro le persone che lo compongono,
+      e per tutto il festival ognuno accumula punti in base a quello che
+      combina: dorme in tenda, finisce nella cloaca, rimedia un numero,
+      abbandona la serata alle nove.
+    </p>
+    <p>
+      Un <b>arbitro</b> tiene il banco e assegna i punti. Tutti gli altri
+      possono segnalare quello che vedono, con tanto di foto-prova, e l'arbitro
+      decide se vale. Alla fine c'è una classifica, e un diario che racconta il
+      festival giornata per giornata.
+    </p>
+  </div>
+
+  <h2>Se ti hanno invitato</h2>
+  <div class="card">
+    <div class="passo">
+      <span class="n">1</span>
+      <span class="testo">
+        <b>Apri il link e inserisci la tua email</b>
+        <p>Non serve nessuna password. Ricevi una mail con dentro un link:
+           aprilo dallo stesso telefono e sei dentro.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">2</span>
+      <span class="testo">
+        <b>Entra col codice dell'accampamento</b>
+        <p>Chi ti ha invitato ti dà un codice di 6 lettere. Lo scrivi, metti il
+           tuo nome, ed entri nel gruppo giusto.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">3</span>
+      <span class="testo">
+        <b>Guarda la classifica e segnala</b>
+        <p>Vedi chi sta vincendo e cosa ha combinato. Quando becchi qualcuno in
+           flagrante, vai su <b>Segna</b>, scegli chi e cosa, allega una foto e
+           invia: la tua segnalazione va all'arbitro, che decide.</p>
+      </span>
+    </div>
+  </div>
+
+  <h2>Se l'arbitro sei tu</h2>
+  <div class="card">
+    <div class="passo">
+      <span class="n">1</span>
+      <span class="testo">
+        <b>Crea l'accampamento</b>
+        <p>Gli dai un nome e diventi automaticamente l'arbitro. Ricevi un codice
+           di 6 lettere: quello è la chiave del tuo gruppo.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">2</span>
+      <span class="testo">
+        <b>Aggiungi le persone in gara</b>
+        <p>Dalla scheda <b>Gestione</b>, una per una. Non serve che abbiano
+           l'app: puoi mettere in classifica anche chi non la userà mai.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">3</span>
+      <span class="testo">
+        <b>Controlla il regolamento</b>
+        <p>Trovi già pronte le regole ufficiali della Compagnia. Puoi cambiare i
+           punteggi, disattivarne, aggiungere le vostre, e in qualsiasi momento
+           rimettere tutto com'era.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">4</span>
+      <span class="testo">
+        <b>Distribuisci il codice</b>
+        <p>Il pulsante <b>Condividi</b> prepara il messaggio già scritto da
+           mandare sul gruppo.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">5</span>
+      <span class="testo">
+        <b>Assegna i punti e approva</b>
+        <p>Quello che segni tu vale subito. Le segnalazioni degli altri si
+           accumulano nella scheda <b>Proposte</b>: le guardi con la foto
+           allegata e decidi.</p>
+      </span>
+    </div>
+    <div class="passo">
+      <span class="n">6</span>
+      <span class="testo">
+        <b>Metti in palio qualcosa</b>
+        <p>Facoltativo, ma cambia tutto. Una riga tipo «aperitivo per i primi
+           due, pagato dagli ultimi due» compare in cima alla classifica.</p>
+      </span>
+    </div>
+  </div>
+
+  <h2>Le cinque schede</h2>
+  <div class="card">
+    <div class="scheda"><span class="ic">🏆</span><span>
+      <b>Classifica</b><p class="muted">Podio e punteggi. Tocca un nome per vedere tutto quello che ha collezionato.</p>
+    </span></div>
+    <div class="scheda"><span class="ic">➕</span><span>
+      <b>Segna</b><p class="muted">Registri un bonus o un malus: chi, cosa, quando, la foto e volendo il link a un video.</p>
+    </span></div>
+    <div class="scheda"><span class="ic">📸</span><span>
+      <b>Diario</b><p class="muted">La cronaca del festival giorno per giorno, con tutte le foto-prova.</p>
+    </span></div>
+    <div class="scheda"><span class="ic">⏳</span><span>
+      <b>Proposte</b><p class="muted">Le segnalazioni in attesa. L'arbitro approva o rifiuta; gli altri seguono le proprie.</p>
+    </span></div>
+    <div class="scheda"><span class="ic">⚙️</span><span>
+      <b>Gestione / Info</b><p class="muted">Codice invito, persone, regole, premio. Per chi non arbitra si chiama Info e contiene i contatti.</p>
+    </span></div>
+  </div>
+
+  <h2>Domande</h2>
+  <div class="card">
+    <details class="faq">
+      <summary>Funziona senza campo?</summary>
+      <p>No, purtroppo serve la connessione, e a Montelago spesso non prende.
+         Non è un dramma: l'app resta attiva fino a fine agosto, quindi potete
+         segnare quando vi torna la linea o anche una volta tornati a casa,
+         ricostruendo le gesta a mente fredda.</p>
+    </details>
+    <details class="faq">
+      <summary>Non mi arriva la mail con il link</summary>
+      <p>Guarda nello spam. Se non c'è, aspetta qualche minuto e riprova una
+         volta sola: ritentare in fretta peggiora le cose. Se proprio non
+         arriva, dillo a chi ti ha invitato.</p>
+    </details>
+    <details class="faq">
+      <summary>Chi vede le nostre foto e i nostri punteggi?</summary>
+      <p>Solo chi ha il codice del vostro accampamento. Gli altri gruppi non
+         vedono niente di vostro, e viceversa: la separazione è imposta dal
+         database, non solo nascosta nell'app. Chi si registra senza avere un
+         codice trova una schermata vuota.</p>
+    </details>
+    <details class="faq">
+      <summary>Posso mettere un video?</summary>
+      <p>Non caricarlo direttamente, ma puoi incollare il link a un video su
+         YouTube, Google Foto o Drive: nell'app si vede insieme all'evento.
+         Le foto invece si caricano normalmente.</p>
+    </details>
+    <details class="faq">
+      <summary>Quanto costa?</summary>
+      <p>Niente. È gratis, fatta per passione nel tempo libero. Proprio per
+         questo può capitare che qualcosa non funzioni: portate pazienza e
+         segnalatecelo.</p>
+    </details>
+    <details class="faq">
+      <summary>Possiamo usarla anche noi, che non siamo della Compagnia?</summary>
+      <p>Certo. Create il vostro accampamento, tenetevi il vostro codice e siete
+         un mondo a parte. Le regole di partenza sono quelle della Compagnia, ma
+         potete riscriverle tutte.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <a class="apri" href="./">Apri Fanta Montelago →</a>
+  </div>
+
+  <div class="card crediti">
+    <img class="stemma piccolo" src="assets/logo-compagnia.svg" alt="La Compagnia di Sotto Monte" width="2160" height="2160">
+    <p class="firma">
+      Creata da <b>MadStoryteller11</b><br>per <b>La Compagnia di Sotto Monte</b>
+    </p>
+    <div class="social">
+      <a href="https://www.instagram.com/compagnia_di_sotto_monte/" target="_blank" rel="noopener noreferrer">La Compagnia di Sotto Monte</a>
+      <a href="https://www.instagram.com/madstoryteller11/" target="_blank" rel="noopener noreferrer">MadStoryteller11</a>
+    </div>
+    <div class="sep"></div>
+    <a class="dona" href="https://ko-fi.com/compagniadisottomonte" target="_blank" rel="noopener noreferrer">🍺 Offri una birra alla Compagnia</a>
+    <p class="muted centrato">Scrivici: <a href="mailto:compagniasottomonte@gmail.com">compagniasottomonte@gmail.com</a></p>
+  </div>
+
+</main>
+
+</body>
+</html>

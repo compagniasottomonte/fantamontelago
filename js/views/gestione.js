@@ -60,7 +60,16 @@ export function render() {
         <button class="grow ghost" data-act="logout">Esci</button>
       </div>
       <div class="sep"></div>
-      <button class="block danger" data-act="abbandona">Abbandona questo accampamento</button>
+      ${arbitro ? `
+        <button class="block danger" data-act="elimina-camp">Elimina l'accampamento</button>
+        <p class="muted mt">
+          Cancella per sempre classifica, eventi, foto, regole e membri.
+          Da arbitro non puoi limitarti ad uscire: lasceresti il gruppo senza
+          nessuno in grado di gestirlo.
+        </p>`
+      : `
+        <button class="block danger" data-act="abbandona">Abbandona questo accampamento</button>
+        <p class="muted mt">Esci tu, il gruppo resta agli altri.</p>`}
     </div>
 
     <h2>L'app</h2>
@@ -265,6 +274,23 @@ export const azioni = {
     stato.dati = null;
     ricordaCamp(null);
     bus.ricarica();
+  },
+
+  async 'elimina-camp'() {
+    const a = stato.dati.accampamento;
+    if (!conferma(
+      `Eliminare "${a.nome}"?\n\n` +
+      'Spariscono per sempre la classifica, tutti gli eventi, le foto, le regole ' +
+      'e i membri. Nessuno potrà più entrare col codice.'
+    )) return;
+    if (!conferma('Ultima conferma: l\'operazione non si può annullare.')) return;
+
+    await conRicarica('Elimino l\'accampamento...', async () => {
+      await api.eliminaAccampamento(stato.campId);
+      stato.campId = null;
+      stato.dati = null;
+      ricordaCamp(null);
+    }, 'Accampamento eliminato');
   },
 
   async abbandona() {

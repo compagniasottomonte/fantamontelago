@@ -123,6 +123,25 @@ export async function aggiornaAccampamento(id, patch) {
   esplodi(error);
 }
 
+/**
+ * Cancella l'accampamento e tutto quello che contiene. Le righe del database
+ * spariscono a cascata, ma le foto nello storage no: vanno rimosse prima che
+ * l'accampamento non esista piu', perche' e' l'essere arbitro di quel gruppo
+ * a dare il permesso di cancellarle.
+ */
+export async function eliminaAccampamento(accampamentoId) {
+  const { data: file } = await client().storage.from('prove')
+    .list(accampamentoId, { limit: 1000 });
+
+  if (file?.length) {
+    await client().storage.from('prove')
+      .remove(file.map((f) => `${accampamentoId}/${f.name}`));
+  }
+
+  const { error } = await client().from('accampamenti').delete().eq('id', accampamentoId);
+  esplodi(error);
+}
+
 export async function esciDaAccampamento(accampamentoId, userId) {
   const { error } = await client()
     .from('membri').delete()

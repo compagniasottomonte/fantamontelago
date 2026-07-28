@@ -110,6 +110,14 @@ main { max-width: 820px; margin: 0 auto; padding: 16px; }
 }
 .dona:hover { background: var(--gold2); }
 
+.link-guida {
+  display: block; text-align: center; text-decoration: none;
+  border: 1px solid var(--gold); color: var(--gold2);
+  padding: 11px 14px; border-radius: 10px; margin: 12px 0 4px;
+  font-weight: 600;
+}
+.link-guida:hover { background: var(--card2); }
+
 .crediti .muted.centrato { text-align: center; }
 
 /* ---------- blocchi ---------- */
@@ -255,6 +263,11 @@ button.big { padding: 15px; font-size: 1.05rem; }
 button.ghost { background: transparent; }
 button.danger { color: var(--red); border-color: #4a2a24; }
 button.icon { padding: 6px 10px; font-size: .85rem; }
+
+/* Affiancati in una riga stretta i pulsanti non stanno su una riga sola:
+ * su schermo piccolo l'etichetta deve poter andare a capo dentro il bottone
+ * invece di sbordare. */
+.row > button { white-space: normal; min-width: 0; }
 
 .riga-camp {
   display: flex; width: 100%; text-align: left; align-items: center;

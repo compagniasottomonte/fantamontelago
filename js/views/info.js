@@ -40,6 +40,7 @@ export function introduzione() {
         dice come sono andate davvero le cose, e il diario le racconta giornata
         per giornata.
       </p>
+      <a class="link-guida" href="guida.html">📖 Guida: come si gioca</a>
     </div>
 
     <div class="card avviso">
@@ -63,6 +64,8 @@ export function crediti() {
       <p class="firma">
         Creata da <b>MadStoryteller11</b><br>per <b>La Compagnia di Sotto Monte</b>
       </p>
+
+      <a class="link-guida" href="guida.html">📖 Guida: come si gioca</a>
 
       <div class="social">
         <a href="${INSTAGRAM_COMPAGNIA}" target="_blank" rel="noopener noreferrer">
