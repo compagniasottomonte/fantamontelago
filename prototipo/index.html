@@ -1,0 +1,666 @@
+<!doctype html>
+<!-- Nome:     index.html                                                     -->
+<!-- Versione: 1.0                                                            -->
+<!-- Uso:      App web offline per il gioco "Fanta Montelago": gestione       -->
+<!--           squadre, personaggi, bonus/malus e classifica live del         -->
+<!--           Montelago Celtic Festival. Tutto in un unico file.             -->
+<!-- Autore:   Daniele Polucci                                                -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c1710">
+<title>Fanta Montelago</title>
+<style>
+  :root{
+    --bg:#0c1710;
+    --bg2:#122016;
+    --card:#18291d;
+    --card2:#1f3325;
+    --line:#2c4632;
+    --txt:#e8e4d5;
+    --dim:#9aab9c;
+    --gold:#d9a441;
+    --gold2:#f0c46a;
+    --green:#4ea86b;
+    --red:#d4614f;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1b3122 0%, transparent 70%),
+      var(--bg);
+    color:var(--txt);
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    padding-bottom:96px;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky;top:0;z-index:20;
+    background:linear-gradient(180deg,#0f1d14 0%, #0f1d14f0 80%, #0f1d1400 100%);
+    padding:14px 16px 18px;
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(6px);
+  }
+  header h1{
+    margin:0;font-size:1.15rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold);font-weight:700;
+  }
+  header .sub{color:var(--dim);font-size:.8rem;margin-top:2px}
+  main{max-width:820px;margin:0 auto;padding:16px}
+  h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);margin:22px 0 10px}
+  h2:first-child{margin-top:4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+  .muted{color:var(--dim);font-size:.85rem}
+  .row{display:flex;gap:8px;align-items:center}
+  .row.wrap{flex-wrap:wrap}
+  .grow{flex:1;min-width:0}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  input,select,textarea,button{font:inherit;font-size:1rem}
+  input,select,textarea{
+    width:100%;background:var(--bg2);color:var(--txt);
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px}
+  label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:0 0 4px}
+  .field{margin-bottom:10px}
+  button{
+    background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px;cursor:pointer;white-space:nowrap;
+  }
+  button:hover{border-color:var(--gold)}
+  button.primary{background:var(--gold);color:#20160a;border-color:var(--gold);font-weight:700}
+  button.primary:hover{background:var(--gold2)}
+  button.ghost{background:transparent}
+  button.danger{color:var(--red);border-color:#4a2a24}
+  button.icon{padding:6px 10px;font-size:.9rem}
+  .pill{
+    display:inline-block;padding:2px 9px;border-radius:999px;font-size:.75rem;
+    border:1px solid var(--line);background:var(--bg2);color:var(--dim);
+  }
+  .pts{font-variant-numeric:tabular-nums;font-weight:700}
+  .pos{color:var(--green)}
+  .neg{color:var(--red)}
+  .item{
+    display:flex;align-items:center;gap:10px;padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .item:last-child{border-bottom:none}
+  .rank{
+    width:30px;height:30px;flex:0 0 30px;border-radius:50%;
+    display:grid;place-items:center;font-weight:700;font-size:.85rem;
+    background:var(--bg2);border:1px solid var(--line);color:var(--dim);
+  }
+  .rank.r1{background:var(--gold);color:#20160a;border-color:var(--gold)}
+  .rank.r2{background:#b8c0c4;color:#1a1a1a;border-color:#b8c0c4}
+  .rank.r3{background:#b07a45;color:#1a1a1a;border-color:#b07a45}
+  .name{font-weight:600}
+  .empty{text-align:center;color:var(--dim);padding:26px 10px;font-size:.9rem}
+  nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    display:grid;grid-template-columns:repeat(5,1fr);
+    background:#0f1d14;border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{
+    background:none;border:none;border-radius:0;padding:9px 2px 11px;
+    color:var(--dim);font-size:.66rem;letter-spacing:.04em;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+  }
+  nav button .ic{font-size:1.15rem;line-height:1}
+  nav button[aria-current="true"]{color:var(--gold);box-shadow:inset 0 2px 0 var(--gold)}
+  details summary{cursor:pointer;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  .sep{height:1px;background:var(--line);margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .log-note{color:var(--dim);font-size:.82rem}
+  .bar{height:5px;background:var(--bg2);border-radius:999px;overflow:hidden;margin-top:6px}
+  .bar > i{display:block;height:100%;background:var(--gold)}
+  .toast{
+    position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);
+    background:var(--gold);color:#20160a;font-weight:700;
+    padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;
+    transition:opacity .2s, transform .2s;z-index:40;max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fanta Montelago</h1>
+  <div class="sub" id="sub"></div>
+</header>
+
+<main id="app"></main>
+
+<nav id="nav">
+  <button data-tab="classifica" aria-current="true"><span class="ic">🏆</span>Classifica</button>
+  <button data-tab="segna"><span class="ic">➕</span>Segna</button>
+  <button data-tab="squadre"><span class="ic">🛡️</span>Squadre</button>
+  <button data-tab="personaggi"><span class="ic">🎭</span>Personaggi</button>
+  <button data-tab="setup"><span class="ic">⚙️</span>Setup</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Stato e persistenza
+ * ------------------------------------------------------------------ */
+const KEY = 'fantamontelago.v1';
+
+const REGOLE_DEFAULT = [
+  // bonus
+  ['Balla sotto il palco principale',        6],
+  ['Fa il bagno nel laghetto',              12],
+  ['Dorme in tenda tutte le notti',          15],
+  ['Si traveste (elfo, druido, vichingo…)',  10],
+  ['Regge fino all’alba senza dormire',  14],
+  ['Suona/canta con degli sconosciuti',      12],
+  ['Porta da bere a tutto il gruppo',         8],
+  ['Monta la tenda di qualcun altro',         7],
+  ['Vince una sfida al villaggio',            9],
+  ['Rimedia un numero di telefono',          11],
+  ['Assiste a un concerto in prima fila',     5],
+  ['Cucina per il campo',                     8],
+  // malus
+  ['Perde il telefono',                      -8],
+  ['Si perde nel bosco',                     -6],
+  ['Dorme in macchina',                      -5],
+  ['Molla e va a dormire prima dell’una', -7],
+  ['Non si presenta al raduno del gruppo',   -6],
+  ['Rimane senza batteria',                  -4],
+  ['Litiga per la fila alla birra',          -9],
+  ['Torna a casa in anticipo',              -15],
+  ['Cade nel fango',                         -3],
+  ['Dimentica il biglietto/braccialetto',   -10],
+];
+
+function seed(){
+  return {
+    version: 1,
+    edizione: 'Montelago Celtic Festival ' + new Date().getFullYear(),
+    creditiIniziali: 100,
+    squadre: [],
+    personaggi: [],
+    regole: REGOLE_DEFAULT.map(([nome, punti]) => ({ id: uid(), nome, punti })),
+    registro: [],
+  };
+}
+
+function uid(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.version === 1) return s;
+    }
+  } catch (e) { console.warn('Stato non leggibile, riparto da zero', e); }
+  return seed();
+}
+
+let S = load();
+let tab = 'classifica';
+let filtroSquadra = '';
+
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('Memoria piena: esporta i dati!'); }
+}
+
+/* ------------------------------------------------------------------ *
+ * Calcoli
+ * ------------------------------------------------------------------ */
+const byId  = (arr, id) => arr.find(x => x.id === id);
+const nomeP = id => (byId(S.personaggi, id) || {}).nome || '???';
+const nomeS = id => (byId(S.squadre, id) || {}).nome || 'Svincolato';
+
+function puntiPersonaggio(pid){
+  return S.registro.reduce((a, e) => e.personaggioId === pid ? a + e.punti : a, 0);
+}
+function rosa(sid){
+  return S.personaggi.filter(p => p.squadraId === sid);
+}
+function puntiSquadra(sid){
+  return rosa(sid).reduce((a, p) => a + puntiPersonaggio(p.id), 0);
+}
+function spesa(sid){
+  return rosa(sid).reduce((a, p) => a + (p.prezzo || 0), 0);
+}
+function classifica(){
+  return S.squadre
+    .map(s => ({ ...s, punti: puntiSquadra(s.id), n: rosa(s.id).length }))
+    .sort((a, b) => b.punti - a.punti || a.nome.localeCompare(b.nome));
+}
+
+/* ------------------------------------------------------------------ *
+ * Utility di rendering
+ * ------------------------------------------------------------------ */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function segno(n){
+  const cls = n > 0 ? 'pos' : n < 0 ? 'neg' : '';
+  return `<span class="pts ${cls}">${n > 0 ? '+' : ''}${n}</span>`;
+}
+function quando(ts){
+  const d = new Date(ts);
+  return d.toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+function optsPersonaggi(sel){
+  if (!S.personaggi.length) return '<option value="">— nessun personaggio —</option>';
+  return ['<option value="">— scegli —</option>']
+    .concat(S.personaggi
+      .slice()
+      .sort((a,b) => a.nome.localeCompare(b.nome))
+      .map(p => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${esc(p.nome)} · ${esc(nomeS(p.squadraId))}</option>`))
+    .join('');
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ------------------------------------------------------------------ *
+ * Viste
+ * ------------------------------------------------------------------ */
+function viewClassifica(){
+  const cl = classifica();
+  if (!cl.length) {
+    return `<div class="empty">Nessuna squadra.<br>Vai su <b>Squadre</b> per crearne una,
+            oppure carica i dati di esempio da <b>Setup</b>.</div>`;
+  }
+  const podio = cl.map((s, i) => {
+    const det = rosa(s.id)
+      .map(p => ({ p, pt: puntiPersonaggio(p.id) }))
+      .sort((a, b) => b.pt - a.pt)
+      .map(({ p, pt }) => `<div class="item"><span class="grow">${esc(p.nome)}</span>${segno(pt)}</div>`)
+      .join('') || '<div class="muted" style="padding:8px 0">Rosa vuota</div>';
+    return `
+      <details class="card">
+        <summary class="row">
+          <span class="rank ${i < 3 ? 'r' + (i + 1) : ''}">${i + 1}</span>
+          <span class="grow">
+            <span class="name">${esc(s.nome)}</span>
+            <div class="muted">${esc(s.allenatore || '—')} · ${s.n} personagg${s.n === 1 ? 'io' : 'i'}</div>
+          </span>
+          ${segno(s.punti)}
+        </summary>
+        <div class="sep"></div>
+        ${det}
+      </details>`;
+  }).join('');
+
+  const ultimi = S.registro.slice(0, 5).map(e => `
+    <div class="item">
+      <span class="grow">
+        <span class="name">${esc(nomeP(e.personaggioId))}</span>
+        <div class="muted">${esc(e.regola)}</div>
+      </span>
+      ${segno(e.punti)}
+    </div>`).join('');
+
+  return `
+    <h2>Classifica</h2>
+    ${podio}
+    ${ultimi ? `<h2>Ultimi eventi</h2><div class="card">${ultimi}</div>` : ''}`;
+}
+
+function viewSegna(){
+  if (!S.personaggi.length) {
+    return `<div class="empty">Prima aggiungi qualche personaggio dalla scheda <b>Personaggi</b>.</div>`;
+  }
+  const regole = S.regole.slice().sort((a, b) => b.punti - a.punti);
+  const bonus = regole.filter(r => r.punti >= 0);
+  const malus = regole.filter(r => r.punti < 0);
+  const btn = r => `<button data-act="segna" data-id="${r.id}" class="grow" style="text-align:left">
+      <span class="grow">${esc(r.nome)}</span> ${segno(r.punti)}</button>`;
+
+  return `
+    <h2>Segna un evento</h2>
+    <div class="card">
+      <div class="field">
+        <label for="selP">Chi</label>
+        <select id="selP">${optsPersonaggi()}</select>
+      </div>
+      <div class="field">
+        <label for="nota">Nota (facoltativa)</label>
+        <input id="nota" placeholder="es. verso le 3 di notte, al palco Taberna">
+      </div>
+      <div class="muted">Scegli il personaggio, poi tocca il bonus o il malus.</div>
+    </div>
+
+    <h2>Bonus</h2>
+    <div class="card">${bonus.map(r => `<div class="item">${btn(r)}</div>`).join('') || '<div class="muted">Nessun bonus</div>'}</div>
+
+    <h2>Malus</h2>
+    <div class="card">${malus.map(r => `<div class="item">${btn(r)}</div>`).join('') || '<div class="muted">Nessun malus</div>'}</div>
+
+    <h2>Registro</h2>
+    ${S.registro.length ? `<div class="card">${S.registro.map(e => `
+      <div class="item">
+        <span class="grow">
+          <span class="name">${esc(nomeP(e.personaggioId))}</span>
+          <div class="muted">${esc(e.regola)} · ${quando(e.ts)}</div>
+          ${e.nota ? `<div class="log-note">“${esc(e.nota)}”</div>` : ''}
+        </span>
+        ${segno(e.punti)}
+        <button class="icon danger" data-act="del-evento" data-id="${e.id}" title="Elimina">✕</button>
+      </div>`).join('')}</div>` : '<div class="empty">Ancora nessun evento registrato.</div>'}`;
+}
+
+function viewSquadre(){
+  const lista = S.squadre.map(s => {
+    const sp = spesa(s.id), tot = S.creditiIniziali || 0;
+    const perc = tot ? Math.min(100, Math.round(sp / tot * 100)) : 0;
+    const r = rosa(s.id);
+    return `
+      <div class="card">
+        <div class="between">
+          <span class="grow">
+            <span class="name">${esc(s.nome)}</span>
+            <div class="muted">${esc(s.allenatore || 'senza allenatore')}</div>
+          </span>
+          ${segno(puntiSquadra(s.id))}
+          <button class="icon danger" data-act="del-squadra" data-id="${s.id}" title="Elimina">✕</button>
+        </div>
+        <div class="bar"><i style="width:${perc}%"></i></div>
+        <div class="muted" style="margin-top:4px">Crediti: ${sp} / ${tot} · ${r.length} personagg${r.length === 1 ? 'io' : 'i'}</div>
+        ${r.length ? `<div class="sep"></div>${r.map(p =>
+          `<div class="item"><span class="grow">${esc(p.nome)} <span class="pill">${p.prezzo || 0}</span></span>${segno(puntiPersonaggio(p.id))}</div>`
+        ).join('')}` : ''}
+      </div>`;
+  }).join('');
+
+  return `
+    <h2>Nuova squadra</h2>
+    <div class="card">
+      <div class="field"><label for="sqNome">Nome squadra</label>
+        <input id="sqNome" placeholder="es. I Druidi del Fango"></div>
+      <div class="field"><label for="sqAll">Fantallenatore</label>
+        <input id="sqAll" placeholder="es. Daniele"></div>
+      <button class="primary" data-act="add-squadra">Aggiungi squadra</button>
+    </div>
+    <h2>Squadre (${S.squadre.length})</h2>
+    ${lista || '<div class="empty">Nessuna squadra ancora.</div>'}`;
+}
+
+function viewPersonaggi(){
+  const opts = ['<option value="">Svincolato</option>']
+    .concat(S.squadre.map(s => `<option value="${s.id}">${esc(s.nome)}</option>`)).join('');
+
+  const filtrati = S.personaggi
+    .filter(p => !filtroSquadra || (filtroSquadra === '_free' ? !p.squadraId : p.squadraId === filtroSquadra))
+    .slice()
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+
+  const lista = filtrati.map(p => `
+    <div class="card">
+      <div class="between">
+        <span class="grow">
+          <span class="name">${esc(p.nome)}</span>
+          <div class="muted">${segno(puntiPersonaggio(p.id))} punti · ${p.prezzo || 0} crediti</div>
+        </span>
+        <button class="icon danger" data-act="del-personaggio" data-id="${p.id}" title="Elimina">✕</button>
+      </div>
+      <div class="sep"></div>
+      <div class="grid2">
+        <div>
+          <label>Squadra</label>
+          <select data-act="set-squadra" data-id="${p.id}">
+            ${opts.replace(`value="${p.squadraId}"`, `value="${p.squadraId}" selected`)}
+          </select>
+        </div>
+        <div>
+          <label>Crediti</label>
+          <input type="number" min="0" value="${p.prezzo || 0}" data-act="set-prezzo" data-id="${p.id}">
+        </div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <h2>Nuovo personaggio</h2>
+    <div class="card">
+      <div class="field"><label for="pNome">Nome</label>
+        <input id="pNome" placeholder="es. Marco «Barba»"></div>
+      <div class="field"><label for="pPrezzo">Crediti</label>
+        <input id="pPrezzo" type="number" min="0" value="10"></div>
+      <button class="primary" data-act="add-personaggio">Aggiungi personaggio</button>
+    </div>
+
+    <h2>Personaggi (${S.personaggi.length})</h2>
+    <div class="card">
+      <label for="filtro">Filtra per squadra</label>
+      <select id="filtro" data-act="filtro">
+        <option value=""${filtroSquadra === '' ? ' selected' : ''}>Tutti</option>
+        <option value="_free"${filtroSquadra === '_free' ? ' selected' : ''}>Solo svincolati</option>
+        ${S.squadre.map(s => `<option value="${s.id}"${filtroSquadra === s.id ? ' selected' : ''}>${esc(s.nome)}</option>`).join('')}
+      </select>
+    </div>
+    ${lista || '<div class="empty">Nessun personaggio da mostrare.</div>'}`;
+}
+
+function viewSetup(){
+  const regole = S.regole.slice().sort((a, b) => b.punti - a.punti).map(r => `
+    <div class="item">
+      <span class="grow">${esc(r.nome)}</span>
+      <input type="number" style="width:80px" value="${r.punti}" data-act="set-punti" data-id="${r.id}">
+      <button class="icon danger" data-act="del-regola" data-id="${r.id}" title="Elimina">✕</button>
+    </div>`).join('');
+
+  return `
+    <h2>Edizione</h2>
+    <div class="card">
+      <div class="field"><label for="ediz">Nome edizione</label>
+        <input id="ediz" data-act="set-edizione" value="${esc(S.edizione)}"></div>
+      <div class="field"><label for="cred">Crediti per squadra (budget asta)</label>
+        <input id="cred" type="number" min="0" data-act="set-crediti" value="${S.creditiIniziali}"></div>
+    </div>
+
+    <h2>Nuovo bonus / malus</h2>
+    <div class="card">
+      <div class="field"><label for="rNome">Descrizione</label>
+        <input id="rNome" placeholder="es. Si addormenta in piedi"></div>
+      <div class="field"><label for="rPunti">Punti (negativi per un malus)</label>
+        <input id="rPunti" type="number" value="5"></div>
+      <button class="primary" data-act="add-regola">Aggiungi regola</button>
+    </div>
+
+    <h2>Regole (${S.regole.length})</h2>
+    <div class="card">${regole || '<div class="muted">Nessuna regola.</div>'}</div>
+
+    <h2>Dati</h2>
+    <div class="card">
+      <div class="row wrap">
+        <button data-act="export">⬇️ Esporta backup</button>
+        <button data-act="import">⬆️ Importa backup</button>
+      </div>
+      <div class="sep"></div>
+      <div class="row wrap">
+        <button data-act="demo">🎲 Carica dati di esempio</button>
+        <button class="danger" data-act="reset-registro">Azzera solo il registro</button>
+        <button class="danger" data-act="reset">Cancella tutto</button>
+      </div>
+      <div class="muted" style="margin-top:10px">
+        I dati restano solo su questo dispositivo (localStorage del browser).
+        Esporta un backup prima di svuotare la cache.
+      </div>
+      <input type="file" id="file" accept="application/json" hidden>
+    </div>`;
+}
+
+const VIEWS = {
+  classifica: viewClassifica,
+  segna: viewSegna,
+  squadre: viewSquadre,
+  personaggi: viewPersonaggi,
+  setup: viewSetup,
+};
+
+function render(){
+  document.getElementById('sub').textContent =
+    S.edizione + ' · ' + S.squadre.length + ' squadre · ' + S.registro.length + ' eventi';
+  document.getElementById('app').innerHTML = VIEWS[tab]();
+  document.querySelectorAll('#nav button').forEach(b =>
+    b.setAttribute('aria-current', String(b.dataset.tab === tab)));
+  window.scrollTo(0, 0);
+}
+
+/* ------------------------------------------------------------------ *
+ * Azioni
+ * ------------------------------------------------------------------ */
+const val = id => (document.getElementById(id) || {}).value || '';
+
+const ACTIONS = {
+  'add-squadra'(){
+    const nome = val('sqNome').trim();
+    if (!nome) return toast('Serve un nome squadra');
+    S.squadre.push({ id: uid(), nome, allenatore: val('sqAll').trim() });
+    save(); render(); toast('Squadra aggiunta');
+  },
+  'del-squadra'(id){
+    const s = byId(S.squadre, id);
+    if (!confirm(`Eliminare la squadra "${s.nome}"? I suoi personaggi tornano svincolati.`)) return;
+    S.squadre = S.squadre.filter(x => x.id !== id);
+    S.personaggi.forEach(p => { if (p.squadraId === id) p.squadraId = ''; });
+    save(); render();
+  },
+  'add-personaggio'(){
+    const nome = val('pNome').trim();
+    if (!nome) return toast('Serve un nome');
+    S.personaggi.push({ id: uid(), nome, prezzo: Number(val('pPrezzo')) || 0, squadraId: '' });
+    save(); render(); toast('Personaggio aggiunto');
+  },
+  'del-personaggio'(id){
+    const p = byId(S.personaggi, id);
+    const n = S.registro.filter(e => e.personaggioId === id).length;
+    if (!confirm(`Eliminare "${p.nome}"${n ? ` e i suoi ${n} eventi` : ''}?`)) return;
+    S.personaggi = S.personaggi.filter(x => x.id !== id);
+    S.registro = S.registro.filter(e => e.personaggioId !== id);
+    save(); render();
+  },
+  'add-regola'(){
+    const nome = val('rNome').trim();
+    if (!nome) return toast('Serve una descrizione');
+    S.regole.push({ id: uid(), nome, punti: Number(val('rPunti')) || 0 });
+    save(); render(); toast('Regola aggiunta');
+  },
+  'del-regola'(id){
+    S.regole = S.regole.filter(x => x.id !== id);
+    save(); render();
+  },
+  'segna'(id){
+    const pid = val('selP');
+    if (!pid) return toast('Scegli prima un personaggio');
+    const r = byId(S.regole, id);
+    S.registro.unshift({
+      id: uid(), personaggioId: pid, regolaId: r.id,
+      regola: r.nome, punti: r.punti,
+      nota: val('nota').trim(), ts: Date.now(),
+    });
+    save();
+    const nota = document.getElementById('nota');
+    render();
+    document.getElementById('selP').value = pid;   // resta pronto per un altro evento
+    toast(`${nomeP(pid)}: ${r.punti > 0 ? '+' : ''}${r.punti}`);
+  },
+  'del-evento'(id){
+    S.registro = S.registro.filter(e => e.id !== id);
+    save(); render();
+  },
+  'export'(){
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fanta-montelago-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  },
+  'import'(){ document.getElementById('file').click(); },
+  'demo'(){
+    if (S.squadre.length && !confirm('Sovrascrivo squadre e personaggi attuali con i dati di esempio?')) return;
+    const sq = [
+      { id: uid(), nome: 'I Druidi del Fango',  allenatore: 'Daniele' },
+      { id: uid(), nome: 'Taberna Warriors',    allenatore: 'Giulia'  },
+      { id: uid(), nome: 'Elfi Molto Stanchi',  allenatore: 'Luca'    },
+    ];
+    const nomi = [
+      ['Marco «Barba»', 25], ['Sara', 18], ['Il Cugino', 12], ['Ale', 20],
+      ['Fede', 15], ['Chiara', 22], ['Tommy', 10], ['La Zia', 8], ['Pippo', 14],
+    ];
+    S.squadre = sq;
+    S.personaggi = nomi.map(([nome, prezzo], i) => ({
+      id: uid(), nome, prezzo, squadraId: sq[i % 3].id,
+    }));
+    S.registro = [];
+    save(); render(); toast('Dati di esempio caricati');
+  },
+  'reset-registro'(){
+    if (!confirm('Cancellare tutti gli eventi registrati? Squadre e personaggi restano.')) return;
+    S.registro = [];
+    save(); render();
+  },
+  'reset'(){
+    if (!confirm('Cancellare TUTTO e ripartire da zero? Operazione irreversibile.')) return;
+    S = seed(); save(); render();
+  },
+};
+
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (!el || el.tagName === 'SELECT' || el.tagName === 'INPUT') return;
+  const fn = ACTIONS[el.dataset.act];
+  if (fn) { ev.preventDefault(); fn(el.dataset.id); }
+});
+
+document.addEventListener('change', ev => {
+  const el = ev.target.closest('[data-act]');
+  if (!el) return;
+  const id = el.dataset.id, v = el.value;
+  switch (el.dataset.act) {
+    case 'set-squadra':  byId(S.personaggi, id).squadraId = v; save(); render(); break;
+    case 'set-prezzo':   byId(S.personaggi, id).prezzo = Number(v) || 0; save(); break;
+    case 'set-punti':    byId(S.regole, id).punti = Number(v) || 0; save(); break;
+    case 'set-edizione': S.edizione = v.trim() || 'Fanta Montelago'; save(); render(); break;
+    case 'set-crediti':  S.creditiIniziali = Number(v) || 0; save(); break;
+    case 'filtro':       filtroSquadra = v; render(); break;
+  }
+});
+
+document.getElementById('nav').addEventListener('click', ev => {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  tab = b.dataset.tab;
+  render();
+});
+
+document.addEventListener('change', ev => {
+  if (ev.target.id !== 'file' || !ev.target.files.length) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const s = JSON.parse(fr.result);
+      if (!s || s.version !== 1 || !Array.isArray(s.squadre)) throw new Error('formato');
+      S = s; save(); render(); toast('Backup importato');
+    } catch (e) { toast('File non valido'); }
+  };
+  fr.readAsText(ev.target.files[0]);
+});
+
+render();
+</script>
+</body>
+</html>
