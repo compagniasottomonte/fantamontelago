@@ -5,6 +5,8 @@
 //           singole viste.
 // Autore:   Daniele Polucci
 
+import { titoloAutomatico } from './titoli.js';
+
 export const stato = {
   sessione: null,   // sessione Supabase, null se non autenticato
   utente: null,     // utente corrente
@@ -68,6 +70,25 @@ export function nomePersonaggio(id) {
 export function nomeMembro(userId) {
   const m = (stato.dati?.membri || []).find((x) => x.user_id === userId);
   return m?.nome_visualizzato || 'Qualcuno';
+}
+
+/**
+ * Il titolo di un personaggio: quello scritto a mano se c'e', altrimenti
+ * quello dedotto dalle sue imprese.
+ */
+export function titoloDi(personaggioId) {
+  return personaggio(personaggioId)?.titolo || titoloCalcolatoDi(personaggioId);
+}
+
+/** Il titolo che l'app assegnerebbe, ignorando quello scritto a mano. */
+export function titoloCalcolatoDi(personaggioId) {
+  if (!personaggio(personaggioId)) return '';
+  const cl = classifica();
+  return titoloAutomatico(
+    eventiValidi().filter((e) => e.personaggio_id === personaggioId),
+    cl.findIndex((x) => x.id === personaggioId) + 1,
+    cl.length,
+  );
 }
 
 /** Il personaggio in classifica abbinato a chi sta usando l'app, se si e' riconosciuto. */

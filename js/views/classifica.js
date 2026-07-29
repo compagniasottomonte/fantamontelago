@@ -5,7 +5,7 @@
 // Autore:   Daniele Polucci
 
 import { esc, punti, dataBreve } from '../ui.js';
-import { stato, bus, classifica, eventiValidi, nomePersonaggio, mioPersonaggio } from '../stato.js';
+import { stato, bus, classifica, eventiValidi, nomePersonaggio, mioPersonaggio, titoloDi } from '../stato.js';
 
 export function render() {
   const cl = classifica();
@@ -43,7 +43,7 @@ export function render() {
         <span class="rank">${i + 4}</span>
         <span class="grow">
           <span class="name">${esc(p.nome)}</span>
-          ${p.soprannome ? `<div class="muted">«${esc(p.soprannome)}»</div>` : ''}
+          <div class="titolo">${esc(titoloDi(p.id))}</div>
         </span>
         ${punti(p.punti)}
       </summary>
@@ -70,7 +70,7 @@ export function render() {
           <span class="rank r${i + 1}">${i + 1}</span>
           <span class="grow">
             <span class="name">${esc(p.nome)}</span>
-            <div class="muted">${p.eventi} event${p.eventi === 1 ? 'o' : 'i'}</div>
+            <div class="titolo">${esc(titoloDi(p.id))}</div>
           </span>
           ${punti(p.punti)}
         </summary>

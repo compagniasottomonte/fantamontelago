@@ -219,6 +219,11 @@ h2.giorno { text-transform: none; letter-spacing: .02em; font-size: 1.1rem; }
 .item:last-child { border-bottom: none; }
 .name { font-weight: 600; }
 
+/* Il soprannome che l'app assegna in base alle imprese. */
+.titolo { font-size: .8rem; color: var(--gold2); font-style: italic; }
+.item.colonna { display: block; }
+.titolo-campo { margin-top: 8px; font-size: .85rem; padding: 7px 10px; }
+
 .rank {
   width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%;
   display: grid; place-items: center; font-weight: 700; font-size: .85rem;

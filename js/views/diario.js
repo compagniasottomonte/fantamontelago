@@ -7,7 +7,7 @@
 import * as api from '../api.js';
 import { condividiEvento } from '../card.js';
 import { esc, punti, toast, occupato, conferma, anteprimaVideo } from '../ui.js';
-import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro, personaggio } from '../stato.js';
+import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro, personaggio, titoloDi } from '../stato.js';
 
 export function render() {
   const eventi = eventiValidi();
@@ -93,6 +93,7 @@ export const azioni = {
         evento,
         personaggio(evento.personaggio_id),
         stato.dati.accampamento,
+        titoloDi(evento.personaggio_id),
       );
       if (esito === 'scaricata') toast('Immagine salvata fra i download');
       else if (esito === 'condivisa') toast('Condivisa');

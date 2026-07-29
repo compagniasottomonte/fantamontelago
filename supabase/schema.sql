@@ -83,6 +83,7 @@ create table if not exists public.eventi (
 alter table public.accampamenti add column if not exists premio text not null default '';
 alter table public.accampamenti add column if not exists bandiera_path text;
 alter table public.regole add column if not exists protetta boolean not null default false;
+alter table public.personaggi add column if not exists titolo text not null default '';
 
 create index if not exists eventi_accampamento_idx on public.eventi (accampamento_id, stato);
 create index if not exists eventi_personaggio_idx  on public.eventi (personaggio_id);
@@ -473,6 +474,42 @@ end $$;
 
 revoke all on function public.rivendica_personaggio(uuid, uuid) from public;
 grant execute on function public.rivendica_personaggio(uuid, uuid) to authenticated;
+
+-- Il titolo lo calcola l'app dai punti fatti, ma qui si puo' scrivere a mano.
+-- Puo' farlo l'arbitro su chiunque, e ciascuno sul proprio: un soprannome
+-- affibbiato da un algoritmo dev'essere correggibile da chi se lo porta.
+-- Titolo vuoto significa "torna a quello automatico".
+create or replace function public.imposta_titolo(pers uuid, nuovo text default '')
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  camp uuid;
+  proprietario uuid;
+  mio_membro uuid;
+begin
+  select p.accampamento_id, p.membro_id into camp, proprietario
+  from public.personaggi p where p.id = pers;
+  if camp is null then
+    raise exception 'Personaggio inesistente';
+  end if;
+
+  select m.id into mio_membro from public.membri m
+  where m.accampamento_id = camp and m.user_id = auth.uid();
+  if mio_membro is null then
+    raise exception 'Non fai parte di questo accampamento';
+  end if;
+
+  if not public.is_arbitro(camp)
+     and (proprietario is null or proprietario <> mio_membro) then
+    raise exception 'Puoi cambiare solo il tuo titolo';
+  end if;
+
+  update public.personaggi
+  set titolo = left(trim(coalesce(nuovo, '')), 40)
+  where id = pers;
+end $$;
+
+revoke all on function public.imposta_titolo(uuid, text) from public;
+grant execute on function public.imposta_titolo(uuid, text) to authenticated;
 
 -- Le due regole promozionali restano in ogni accampamento: nessun arbitro puo'
 -- cancellarle, disattivarle o cambiarne il punteggio. Sono elencate qui in un

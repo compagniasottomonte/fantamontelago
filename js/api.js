@@ -187,6 +187,17 @@ export async function rivendicaPersonaggio(accampamentoId, personaggioId) {
   esplodi(error);
 }
 
+/**
+ * Scrive un titolo a mano. Con testo vuoto si torna a quello automatico.
+ * Chi puo' farlo lo decide il database: l'arbitro su chiunque, ciascuno sul
+ * personaggio che si e' preso.
+ */
+export async function impostaTitolo(personaggioId, titolo) {
+  const { error } = await client()
+    .rpc('imposta_titolo', { pers: personaggioId, nuovo: titolo || '' });
+  esplodi(error);
+}
+
 /** Solo l'arbitro: scioglie un abbinamento sbagliato. */
 export async function slegaPersonaggio(personaggioId) {
   const { error } = await client()

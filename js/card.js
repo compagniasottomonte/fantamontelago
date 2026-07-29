@@ -104,7 +104,7 @@ function sfondoDecorativo(ctx) {
  * Riceve gia' pronti gli URL, cosi' la funzione non deve sapere nulla di come
  * si recuperano.
  */
-export async function cardEvento({ evento, personaggio, accampamento, urlFoto, urlBandiera }) {
+export async function cardEvento({ evento, personaggio, accampamento, titolo, urlFoto, urlBandiera }) {
   const canvas = document.createElement('canvas');
   canvas.width = LARG;
   canvas.height = ALT;
@@ -154,27 +154,41 @@ export async function cardEvento({ evento, personaggio, accampamento, urlFoto, u
   ctx.fillText(accampamento.edizione || 'Montelago Celtic Festival', xTesto, 250);
 
   // --- in basso: il verdetto ---
+  //
+  // Nome e punteggio condividono la stessa riga, e sotto scorre la regola.
+  // Tenere il numero accanto al nome invece che in fondo evita che una regola
+  // dal nome lungo, scendendo su tre righe, gli finisca addosso.
   const positivo = evento.punti >= 0;
-  let y = ALT - 470;
+  const rigaVerdetto = ALT - 620;
 
+  // Il nome si ferma a meta' larghezza: oltre finirebbe sotto al punteggio,
+  // che occupa la meta' destra della stessa riga.
   ctx.fillStyle = COLORI.oro;
   ctx.font = `700 52px ${FONT}`;
-  ctx.fillText(String(personaggio?.nome || '').toUpperCase(), 90, y);
+  ctx.fillText(inRighe(ctx, String(personaggio?.nome || '').toUpperCase(), 480, 1)[0] || '', 90, rigaVerdetto);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = positivo ? COLORI.verde : COLORI.rosso;
+  ctx.font = `800 150px ${FONT}`;
+  ctx.fillText(`${positivo ? '+' : ''}${evento.punti}`, LARG - 90, rigaVerdetto);
+
+  ctx.textAlign = 'left';
+  let y = rigaVerdetto;
+
+  if (titolo) {
+    y += 48;
+    ctx.fillStyle = 'rgba(240,196,106,.85)';
+    ctx.font = `italic 400 38px ${FONT}`;
+    ctx.fillText(inRighe(ctx, titolo, LARG - 180, 1)[0], 90, y);
+  }
 
   y += 90;
   ctx.fillStyle = COLORI.chiaro;
   ctx.font = `700 74px ${FONT}`;
-  const righeRegola = inRighe(ctx, evento.regola_nome, LARG - 180, 3);
-  for (const riga of righeRegola) {
+  for (const riga of inRighe(ctx, evento.regola_nome, LARG - 180, 3)) {
     ctx.fillText(riga, 90, y);
     y += 86;
   }
-
-  // --- il punteggio, grande quanto basta a leggerlo da lontano ---
-  ctx.textAlign = 'right';
-  ctx.fillStyle = positivo ? COLORI.verde : COLORI.rosso;
-  ctx.font = `800 190px ${FONT}`;
-  ctx.fillText(`${positivo ? '+' : ''}${evento.punti}`, LARG - 90, ALT - 255);
 
   // --- piede: logo e firma ---
   if (logo) ctx.drawImage(logo, 90, ALT - 235, 110, 110);
@@ -216,13 +230,15 @@ export async function condividi(blob, nomeFile, testo) {
 }
 
 /** Recupera il necessario e produce la card di un evento gia' approvato. */
-export async function condividiEvento(evento, personaggio, accampamento) {
+export async function condividiEvento(evento, personaggio, accampamento, titolo) {
   const [urlFoto, urlBandiera] = await Promise.all([
     api.urlFoto(evento.foto_path),
     api.urlFoto(accampamento.bandiera_path),
   ]);
 
-  const blob = await cardEvento({ evento, personaggio, accampamento, urlFoto, urlBandiera });
+  const blob = await cardEvento({
+    evento, personaggio, accampamento, titolo, urlFoto, urlBandiera,
+  });
   const nome = `fanta-montelago-${(personaggio?.nome || 'evento').toLowerCase().replace(/\W+/g, '-')}.png`;
   const testo = `${personaggio?.nome}: ${evento.regola_nome} (${evento.punti > 0 ? '+' : ''}${evento.punti}) — Fanta Montelago`;
 

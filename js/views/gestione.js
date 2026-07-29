@@ -7,7 +7,8 @@
 
 import * as api from '../api.js';
 import { esc, punti, toast, occupato, conferma, iniziali } from '../ui.js';
-import { stato, bus, ricordaCamp, puntiDi, mioPersonaggio, membroDaId } from '../stato.js';
+import { stato, bus, ricordaCamp, puntiDi, mioPersonaggio, membroDaId,
+         titoloDi, titoloCalcolatoDi } from '../stato.js';
 import { crediti } from './info.js';
 
 export function render() {
@@ -132,10 +133,21 @@ function sezioneChiSei(personaggi) {
         <div class="between">
           <span class="grow">
             <span class="name">${esc(mio.nome)}</span>
-            <div class="muted">sei tu</div>
+            <div class="titolo">${esc(titoloDi(mio.id))}</div>
           </span>
           ${punti(puntiDi(mio.id))}
         </div>
+        <div class="sep"></div>
+        <div class="field">
+          <label for="mioTitolo">Il tuo titolo</label>
+          <input id="mioTitolo" maxlength="40" value="${esc(mio.titolo || '')}"
+                 placeholder="${esc(titoloCalcolatoDi(mio.id))}">
+        </div>
+        <button class="block" data-act="salva-titolo" data-id="${mio.id}">Salva il titolo</button>
+        <p class="muted mt">
+          Lascialo vuoto e te lo assegna l'app in base a quello che combini:
+          adesso saresti <b>${esc(titoloCalcolatoDi(mio.id))}</b>.
+        </p>
         <div class="sep"></div>`
       : `
         <p class="muted">
@@ -205,15 +217,20 @@ function sezionePersonaggi(personaggi) {
       ${personaggi.map((p) => {
         const abbinato = p.membro_id ? membroDaId(p.membro_id) : null;
         return `
-        <div class="item">
-          <span class="grow">
-            <span class="name">${esc(p.nome)}</span>
-            ${p.soprannome ? `<div class="muted">«${esc(p.soprannome)}»</div>` : ''}
-            ${abbinato ? `<div class="muted">👤 ${esc(abbinato.nome_visualizzato || 'iscritto')}</div>` : ''}
-          </span>
-          ${punti(puntiDi(p.id))}
-          ${abbinato ? `<button class="icon" data-act="slega" data-id="${p.id}" title="Sciogli l'abbinamento">🔗</button>` : ''}
-          <button class="icon danger" data-act="del-personaggio" data-id="${p.id}">✕</button>
+        <div class="item colonna">
+          <div class="row">
+            <span class="grow">
+              <span class="name">${esc(p.nome)}</span>
+              ${p.soprannome ? `<div class="muted">«${esc(p.soprannome)}»</div>` : ''}
+              ${abbinato ? `<div class="muted">👤 ${esc(abbinato.nome_visualizzato || 'iscritto')}</div>` : ''}
+            </span>
+            ${punti(puntiDi(p.id))}
+            ${abbinato ? `<button class="icon" data-act="slega" data-id="${p.id}" title="Sciogli l'abbinamento">🔗</button>` : ''}
+            <button class="icon danger" data-act="del-personaggio" data-id="${p.id}">✕</button>
+          </div>
+          <input class="titolo-campo" maxlength="40" value="${esc(p.titolo || '')}"
+                 placeholder="${esc(titoloCalcolatoDi(p.id))}"
+                 data-campo="titolo-personaggio" data-id="${p.id}">
         </div>`;
       }).join('')}
     </div>` : '<div class="empty">Nessun personaggio: aggiungi le persone del tuo clan.</div>'}`;
@@ -363,6 +380,12 @@ export const azioni = {
       scelto ? 'Fatto: ora l\'app sa chi sei' : 'Abbinamento sciolto');
   },
 
+  'salva-titolo'(id) {
+    const testo = document.getElementById('mioTitolo').value.trim();
+    return conRicarica('Salvo...', () => api.impostaTitolo(id, testo),
+      testo ? 'Titolo aggiornato' : 'Sei tornato al titolo automatico');
+  },
+
   'slega'(personaggioId) {
     if (!conferma('Sciogliere questo abbinamento? La persona potrà rifarlo.')) return;
     return conRicarica('Aggiorno...', () => api.slegaPersonaggio(personaggioId));
@@ -476,6 +499,17 @@ export function collegaCampi() {
       if (!Number.isInteger(valore)) return toast('Punteggio non valido', 'error');
       try {
         await api.aggiornaRegola(regola.dataset.id, { punti: valore });
+        await bus.ricarica();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+      return;
+    }
+
+    const titolo = ev.target.closest('[data-campo="titolo-personaggio"]');
+    if (titolo) {
+      try {
+        await api.impostaTitolo(titolo.dataset.id, titolo.value.trim());
         await bus.ricarica();
       } catch (e) {
         toast(e.message, 'error');
