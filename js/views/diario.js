@@ -5,8 +5,9 @@
 // Autore:   Daniele Polucci
 
 import * as api from '../api.js';
+import { condividiEvento } from '../card.js';
 import { esc, punti, toast, occupato, conferma, anteprimaVideo } from '../ui.js';
-import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro } from '../stato.js';
+import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro, personaggio } from '../stato.js';
 
 export function render() {
   const eventi = eventiValidi();
@@ -60,6 +61,10 @@ function scheda(e) {
         : `<a class="link-video" href="${esc(e.video_url)}" target="_blank" rel="noopener noreferrer">🎬 Apri il video</a>`
       ) : ''}
 
+      <button class="block condividi" data-act="condividi-evento" data-id="${e.id}">
+        📤 Crea l'immagine da condividere
+      </button>
+
       <div class="between mt">
         <span class="muted small">Segnato da ${esc(nomeMembro(e.proposto_da))}</span>
         ${stato.dati.arbitro
@@ -70,6 +75,34 @@ function scheda(e) {
 }
 
 export const azioni = {
+  async 'condividi-evento'(id) {
+    const evento = stato.dati.eventi.find((x) => x.id === id);
+
+    // Le foto-prova stanno in un archivio privato, visibile solo
+    // all'accampamento: trasformarle in una card le rende pubbliche, e questo
+    // dev'essere una scelta, non un incidente.
+    if (evento.foto_path && !conferma(
+      'Stai per creare un\'immagine con dentro la foto-prova.\n\n' +
+      'Finora quella foto l\'ha vista solo il vostro accampamento: se la ' +
+      'pubblichi la vedranno tutti. Assicurati che a chi è ritratto stia bene.'
+    )) return;
+
+    occupato(true, 'Preparo l\'immagine...');
+    try {
+      const esito = await condividiEvento(
+        evento,
+        personaggio(evento.personaggio_id),
+        stato.dati.accampamento,
+      );
+      if (esito === 'scaricata') toast('Immagine salvata fra i download');
+      else if (esito === 'condivisa') toast('Condivisa');
+    } catch (e) {
+      toast(e.message || 'Non sono riuscito a creare l\'immagine', 'error');
+    } finally {
+      occupato(false);
+    }
+  },
+
   async 'annulla-evento'(id) {
     if (!conferma('Annullare questo evento? I punti verranno tolti.')) return;
     const evento = stato.dati.eventi.find((x) => x.id === id);

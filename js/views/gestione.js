@@ -6,8 +6,8 @@
 // Autore:   Daniele Polucci
 
 import * as api from '../api.js';
-import { esc, punti, toast, occupato, conferma } from '../ui.js';
-import { stato, bus, ricordaCamp, puntiDi } from '../stato.js';
+import { esc, punti, toast, occupato, conferma, iniziali } from '../ui.js';
+import { stato, bus, ricordaCamp, puntiDi, mioPersonaggio, membroDaId } from '../stato.js';
 import { crediti } from './info.js';
 
 export function render() {
@@ -34,6 +34,8 @@ export function render() {
       </div>
     </div>
 
+    ${sezioneBandiera(a, arbitro)}
+    ${sezioneChiSei(personaggi)}
     ${sezionePremio(a, arbitro)}
     ${arbitro ? sezionePersonaggi(personaggi) : elencoPersonaggi(personaggi)}
     ${arbitro ? sezioneRegole(regole) : elencoRegole(regole)}
@@ -74,6 +76,85 @@ export function render() {
 
     <h2>L'app</h2>
     ${crediti()}`;
+}
+
+/**
+ * La bandiera del clan. La caricano gia' fatta, perche' i gruppi che vanno a
+ * Montelago un vessillo ce l'hanno: nessun generatore di stemmi risolverebbe
+ * un problema che non hanno. Senza bandiera restano le iniziali, cosi' le
+ * immagini da condividere sono complete fin dal primo giorno.
+ */
+function sezioneBandiera(a, arbitro) {
+  const vessillo = a.bandiera_path
+    ? `<img class="bandiera" data-foto="${esc(a.bandiera_path)}" alt="Bandiera dell'accampamento">`
+    : `<div class="bandiera vuota">${esc(iniziali(a.nome))}</div>`;
+
+  if (!arbitro) {
+    return `<h2>Bandiera</h2><div class="card center">${vessillo}</div>`;
+  }
+
+  return `
+    <h2>Bandiera</h2>
+    <div class="card center">
+      ${vessillo}
+      <div class="row wrap pari mt">
+        <button class="grow" data-act="scegli-bandiera">
+          ${a.bandiera_path ? '🔄 Sostituisci' : '📤 Carica la bandiera'}
+        </button>
+        ${a.bandiera_path
+          ? '<button class="grow danger" data-act="rimuovi-bandiera">Rimuovi</button>'
+          : ''}
+      </div>
+      <input type="file" id="fileBandiera" accept="image/*" hidden>
+      <p class="muted mt">
+        Meglio un PNG con lo sfondo trasparente: la bandiera finirà sulle
+        immagini da condividere, e un rettangolo bianco stonerebbe.
+      </p>
+    </div>`;
+}
+
+/**
+ * L'anello fra chi usa l'app e la classifica. I personaggi li inserisce
+ * l'arbitro e non sono legati a un account, quindi senza questo passaggio
+ * l'app non sa quale riga sia la tua.
+ */
+function sezioneChiSei(personaggi) {
+  if (!personaggi.length) return '';
+
+  const mio = mioPersonaggio();
+  const disponibili = personaggi.filter((p) => !p.membro_id || p.id === mio?.id);
+  const nascosti = personaggi.length - disponibili.length;
+
+  return `
+    <h2>Chi sei in classifica</h2>
+    <div class="card">
+      ${mio ? `
+        <div class="between">
+          <span class="grow">
+            <span class="name">${esc(mio.nome)}</span>
+            <div class="muted">sei tu</div>
+          </span>
+          ${punti(puntiDi(mio.id))}
+        </div>
+        <div class="sep"></div>`
+      : `
+        <p class="muted">
+          Dicci quale riga della classifica sei tu: serve per avere il tuo
+          riepilogo di fine festival.
+        </p>`}
+
+      <div class="field">
+        <label for="selIo">${mio ? 'Cambia abbinamento' : 'Scegli il tuo nome'}</label>
+        <select id="selIo">
+          <option value="">— nessuno —</option>
+          ${disponibili.map((p) => `
+            <option value="${p.id}"${p.id === mio?.id ? ' selected' : ''}>${esc(p.nome)}</option>
+          `).join('')}
+        </select>
+      </div>
+      <button class="primary block" data-act="rivendica">${mio ? 'Aggiorna' : 'Sono io'}</button>
+      ${nascosti ? `<p class="muted mt">${nascosti} ${nascosti === 1 ? 'nome è già stato preso' : 'nomi sono già stati presi'} da altri e non compaiono nell'elenco.</p>` : ''}
+    </div>`;
 }
 
 /** Il premio e' facoltativo: se l'arbitro non lo imposta, la sezione sparisce. */
@@ -121,15 +202,20 @@ function sezionePersonaggi(personaggi) {
       <button class="primary block" data-act="add-personaggio">Aggiungi al clan</button>
     </div>
     ${personaggi.length ? `<div class="card">
-      ${personaggi.map((p) => `
+      ${personaggi.map((p) => {
+        const abbinato = p.membro_id ? membroDaId(p.membro_id) : null;
+        return `
         <div class="item">
           <span class="grow">
             <span class="name">${esc(p.nome)}</span>
             ${p.soprannome ? `<div class="muted">«${esc(p.soprannome)}»</div>` : ''}
+            ${abbinato ? `<div class="muted">👤 ${esc(abbinato.nome_visualizzato || 'iscritto')}</div>` : ''}
           </span>
           ${punti(puntiDi(p.id))}
+          ${abbinato ? `<button class="icon" data-act="slega" data-id="${p.id}" title="Sciogli l'abbinamento">🔗</button>` : ''}
           <button class="icon danger" data-act="del-personaggio" data-id="${p.id}">✕</button>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>` : '<div class="empty">Nessun personaggio: aggiungi le persone del tuo clan.</div>'}`;
 }
 
@@ -259,6 +345,29 @@ export const azioni = {
     }
   },
 
+  'scegli-bandiera'() {
+    document.getElementById('fileBandiera').click();
+  },
+
+  'rimuovi-bandiera'() {
+    if (!conferma('Rimuovere la bandiera dell\'accampamento?')) return;
+    return conRicarica('Rimuovo...', () =>
+      api.rimuoviBandiera(stato.campId, stato.dati.accampamento.bandiera_path),
+      'Bandiera rimossa');
+  },
+
+  'rivendica'() {
+    const scelto = document.getElementById('selIo').value;
+    return conRicarica('Aggiorno...', () =>
+      api.rivendicaPersonaggio(stato.campId, scelto),
+      scelto ? 'Fatto: ora l\'app sa chi sei' : 'Abbinamento sciolto');
+  },
+
+  'slega'(personaggioId) {
+    if (!conferma('Sciogliere questo abbinamento? La persona potrà rifarlo.')) return;
+    return conRicarica('Aggiorno...', () => api.slegaPersonaggio(personaggioId));
+  },
+
   'salva-premio'() {
     const testo = document.getElementById('premio').value.trim();
     return conRicarica('Salvo...', () =>
@@ -358,18 +467,37 @@ export const azioni = {
   },
 };
 
-/** Modifica del punteggio di una regola direttamente dalla lista. */
+/** Campi che agiscono al cambiamento, senza passare da un pulsante. */
 export function collegaCampi() {
   document.addEventListener('change', async (ev) => {
-    const el = ev.target.closest('[data-campo="punti-regola"]');
-    if (!el) return;
-    const valore = Number(el.value);
-    if (!Number.isInteger(valore)) return toast('Punteggio non valido', 'error');
-    try {
-      await api.aggiornaRegola(el.dataset.id, { punti: valore });
-      await bus.ricarica();
-    } catch (e) {
-      toast(e.message, 'error');
+    const regola = ev.target.closest('[data-campo="punti-regola"]');
+    if (regola) {
+      const valore = Number(regola.value);
+      if (!Number.isInteger(valore)) return toast('Punteggio non valido', 'error');
+      try {
+        await api.aggiornaRegola(regola.dataset.id, { punti: valore });
+        await bus.ricarica();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+      return;
+    }
+
+    if (ev.target.id === 'fileBandiera' && ev.target.files?.length) {
+      const file = ev.target.files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        return toast('Immagine troppo grande (oltre 10 MB)', 'error');
+      }
+      occupato(true, 'Carico la bandiera...');
+      try {
+        await api.caricaBandiera(stato.campId, file, stato.dati.accampamento.bandiera_path);
+        await bus.ricarica();
+        toast('Bandiera aggiornata');
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        occupato(false);
+      }
     }
   });
 }

@@ -70,6 +70,18 @@ export function nomeMembro(userId) {
   return m?.nome_visualizzato || 'Qualcuno';
 }
 
+/** Il personaggio in classifica abbinato a chi sta usando l'app, se si e' riconosciuto. */
+export function mioPersonaggio() {
+  const io = stato.dati?.io;
+  if (!io) return null;
+  return (stato.dati.personaggi || []).find((p) => p.membro_id === io.id) || null;
+}
+
+/** Il membro dietro un abbinamento, per mostrare chi si e' preso un personaggio. */
+export function membroDaId(id) {
+  return (stato.dati?.membri || []).find((m) => m.id === id) || null;
+}
+
 export function proposteInAttesa() {
   return (stato.dati?.eventi || []).filter((e) => e.stato === 'proposto');
 }

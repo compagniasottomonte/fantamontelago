@@ -81,6 +81,7 @@ create table if not exists public.eventi (
 -- questo schema in passato: "create table if not exists" lascia intatte le
 -- tabelle che esistono, quindi le novita' vanno applicate a parte.
 alter table public.accampamenti add column if not exists premio text not null default '';
+alter table public.accampamenti add column if not exists bandiera_path text;
 alter table public.regole add column if not exists protetta boolean not null default false;
 
 create index if not exists eventi_accampamento_idx on public.eventi (accampamento_id, stato);
@@ -421,6 +422,57 @@ language sql immutable as $$
     ('Stella sulla chiappa',                                 30)
   ) as t(nome, punti);
 $$;
+
+-- ===================================================================
+-- RICONOSCERSI NELLA CLASSIFICA
+-- ===================================================================
+-- I personaggi li inserisce l'arbitro e non sono legati a un account: senza
+-- questo passaggio l'app non ha modo di sapere quale riga della classifica
+-- corrisponda a chi la sta guardando, e il riepilogo personale sarebbe
+-- impossibile. Chi non usa l'app resta semplicemente non abbinato.
+
+-- Con "pers" nullo l'abbinamento viene semplicemente sciolto: serve l'id
+-- dell'accampamento proprio perche' senza personaggio non ci sarebbe altro
+-- modo di sapere in quale gruppo stiamo operando.
+create or replace function public.rivendica_personaggio(camp uuid, pers uuid default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  mio_membro uuid;
+begin
+  select m.id into mio_membro from public.membri m
+  where m.accampamento_id = camp and m.user_id = auth.uid();
+  if mio_membro is null then
+    raise exception 'Non fai parte di questo accampamento';
+  end if;
+
+  -- Una persona sola per personaggio e un personaggio solo per persona:
+  -- scegliendone un altro, il precedente si libera da se'.
+  update public.personaggi set membro_id = null
+  where accampamento_id = camp and membro_id = mio_membro;
+
+  if pers is null then
+    return;
+  end if;
+
+  if not exists (
+    select 1 from public.personaggi p
+    where p.id = pers and p.accampamento_id = camp
+  ) then
+    raise exception 'Personaggio inesistente in questo accampamento';
+  end if;
+
+  if exists (
+    select 1 from public.personaggi p
+    where p.id = pers and p.membro_id is not null and p.membro_id <> mio_membro
+  ) then
+    raise exception 'Questo personaggio se l''è già preso qualcun altro';
+  end if;
+
+  update public.personaggi set membro_id = mio_membro where id = pers;
+end $$;
+
+revoke all on function public.rivendica_personaggio(uuid, uuid) from public;
+grant execute on function public.rivendica_personaggio(uuid, uuid) to authenticated;
 
 -- Le due regole promozionali restano in ogni accampamento: nessun arbitro puo'
 -- cancellarle, disattivarle o cambiarne il punteggio. Sono elencate qui in un

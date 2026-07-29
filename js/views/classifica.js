@@ -5,7 +5,7 @@
 // Autore:   Daniele Polucci
 
 import { esc, punti, dataBreve } from '../ui.js';
-import { stato, classifica, eventiValidi, nomePersonaggio } from '../stato.js';
+import { stato, bus, classifica, eventiValidi, nomePersonaggio, mioPersonaggio } from '../stato.js';
 
 export function render() {
   const cl = classifica();
@@ -27,6 +27,8 @@ export function render() {
 
   const podio = cl.slice(0, 3);
   const resto = cl.slice(3);
+  const mioId = mioPersonaggio()?.id;
+  const evidenzia = (id) => (id === mioId ? ' io' : '');
 
   const cartaPodio = (p, i) => `
     <div class="podio-posto p${i + 1}">
@@ -36,7 +38,7 @@ export function render() {
     </div>`;
 
   const riga = (p, i) => `
-    <details class="card">
+    <details class="card${evidenzia(p.id)}">
       <summary class="row">
         <span class="rank">${i + 4}</span>
         <span class="grow">
@@ -59,10 +61,11 @@ export function render() {
 
   return `
     ${strisciaPremio}
+    ${invitoRiconoscersi()}
     <div class="podio">${podio.map(cartaPodio).join('')}</div>
 
     ${podio.map((p, i) => `
-      <details class="card">
+      <details class="card${evidenzia(p.id)}">
         <summary class="row">
           <span class="rank r${i + 1}">${i + 1}</span>
           <span class="grow">
@@ -78,6 +81,25 @@ export function render() {
 
     ${ultimi ? `<h2>Ultimi verdetti</h2><div class="card">${ultimi}</div>` : ''}`;
 }
+
+/**
+ * Finche' non ci si riconosce, l'app non sa quale riga sia la tua: senza quel
+ * collegamento niente riepilogo personale a fine festival.
+ */
+function invitoRiconoscersi() {
+  if (mioPersonaggio() || !stato.dati.personaggi.length) return '';
+  return `
+    <div class="banner ok">
+      <div class="between">
+        <span class="grow">Non ti sei ancora riconosciuto in classifica.</span>
+        <button data-act="vai-riconoscimento">Chi sono</button>
+      </div>
+    </div>`;
+}
+
+export const azioni = {
+  'vai-riconoscimento'() { bus.vaiA('gestione'); },
+};
 
 /** Storico dei punti di un singolo personaggio, mostrato aprendo la riga. */
 function dettaglio(personaggioId) {

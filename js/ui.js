@@ -48,13 +48,8 @@ export function occupato(attivo, testo = 'Un attimo...') {
   el.classList.toggle('show', attivo);
 }
 
-/**
- * Ridimensiona e ricomprime una foto lato browser.
- * Al festival la rete e' pessima: mandare 4 MB di JPEG originale significa
- * upload falliti, mentre 1600px a qualita' 0.72 sono ~250 KB e restano
- * ampiamente dentro il piano gratuito di Supabase.
- */
-export async function comprimiImmagine(file, latoMax = 1600, qualita = 0.72) {
+/** Ridisegna un file immagine su una tela piu' piccola, mantenendo le proporzioni. */
+async function riduci(file, latoMax) {
   if (!file.type.startsWith('image/')) throw new Error('Il file non e\' un\'immagine');
 
   const bitmap = await createImageBitmap(file);
@@ -64,10 +59,44 @@ export async function comprimiImmagine(file, latoMax = 1600, qualita = 0.72) {
   canvas.height = Math.round(bitmap.height * scala);
   canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close?.();
+  return canvas;
+}
 
+/**
+ * Ridimensiona e ricomprime una foto lato browser.
+ * Al festival la rete e' pessima: mandare 4 MB di JPEG originale significa
+ * upload falliti, mentre 1600px a qualita' 0.72 sono ~250 KB e restano
+ * ampiamente dentro il piano gratuito di Supabase.
+ */
+export async function comprimiImmagine(file, latoMax = 1600, qualita = 0.72) {
+  const canvas = await riduci(file, latoMax);
   const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/jpeg', qualita));
   if (!blob) throw new Error('Compressione non riuscita');
   return blob;
+}
+
+/**
+ * Ridimensiona conservando la trasparenza.
+ * Le bandiere dei clan sono quasi sempre PNG con lo sfondo trasparente:
+ * convertirle in JPEG le chiuderebbe dentro un rettangolo bianco, che nelle
+ * card stonerebbe su qualunque fondo.
+ */
+export async function ridimensionaPng(file, latoMax = 512) {
+  const canvas = await riduci(file, latoMax);
+  const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/png'));
+  if (!blob) throw new Error('Conversione non riuscita');
+  return blob;
+}
+
+/** Ripiego quando un accampamento non ha ancora caricato la sua bandiera. */
+export function iniziali(nome) {
+  return String(nome || '?')
+    .split(/\s+/)
+    .filter((p) => p.length > 2 || /^[A-Z]/.test(p))
+    .slice(0, 3)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase() || '?';
 }
 
 /** Estrae un id di YouTube/Vimeo per l'anteprima, se riconoscibile. */

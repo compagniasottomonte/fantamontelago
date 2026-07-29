@@ -8,7 +8,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { leggiConfig } from './config.js';
-import { comprimiImmagine } from './ui.js';
+import { comprimiImmagine, ridimensionaPng } from './ui.js';
 
 let sb = null;
 
@@ -148,6 +148,49 @@ export async function eliminaAccampamento(accampamentoId) {
   }
 
   const { error } = await client().from('accampamenti').delete().eq('id', accampamentoId);
+  esplodi(error);
+}
+
+/**
+ * Carica la bandiera del clan. Sta nello stesso archivio delle foto-prova e
+ * sotto la stessa cartella dell'accampamento, cosi' valgono le regole di
+ * accesso gia' definite: la vedono i membri, la sostituisce solo l'arbitro.
+ */
+export async function caricaBandiera(accampamentoId, file, pathPrecedente) {
+  const blob = await ridimensionaPng(file, 512);
+  const path = `${accampamentoId}/bandiera-${crypto.randomUUID()}.png`;
+
+  const { error } = await client().storage.from('prove')
+    .upload(path, blob, { contentType: 'image/png', upsert: false });
+  esplodi(error);
+
+  await aggiornaAccampamento(accampamentoId, { bandiera_path: path });
+
+  if (pathPrecedente) {
+    await client().storage.from('prove').remove([pathPrecedente]);
+  }
+  return path;
+}
+
+export async function rimuoviBandiera(accampamentoId, path) {
+  await aggiornaAccampamento(accampamentoId, { bandiera_path: null });
+  if (path) await client().storage.from('prove').remove([path]);
+}
+
+/**
+ * Collega chi sta usando l'app al proprio personaggio in classifica.
+ * Con personaggioId nullo scioglie l'abbinamento.
+ */
+export async function rivendicaPersonaggio(accampamentoId, personaggioId) {
+  const { error } = await client()
+    .rpc('rivendica_personaggio', { camp: accampamentoId, pers: personaggioId || null });
+  esplodi(error);
+}
+
+/** Solo l'arbitro: scioglie un abbinamento sbagliato. */
+export async function slegaPersonaggio(personaggioId) {
+  const { error } = await client()
+    .from('personaggi').update({ membro_id: null }).eq('id', personaggioId);
   esplodi(error);
 }
 
