@@ -6,9 +6,9 @@
 // Autore:   Daniele Polucci
 
 import * as api from '../api.js';
-import { esc, punti, toast, occupato, conferma, iniziali } from '../ui.js';
+import { esc, punti, toast, occupato, conferma, iniziali, dataOra, perCampoData } from '../ui.js';
 import { stato, bus, ricordaCamp, puntiDi, mioPersonaggio, membroDaId,
-         titoloDi, titoloCalcolatoDi } from '../stato.js';
+         titoloDi, titoloCalcolatoDi, stagioneChiusa, proposteInAttesa } from '../stato.js';
 import { crediti } from './info.js';
 
 export function render() {
@@ -35,6 +35,7 @@ export function render() {
       </div>
     </div>
 
+    ${sezioneStagione(a, arbitro)}
     ${sezioneBandiera(a, arbitro)}
     ${sezioneChiSei(personaggi)}
     ${sezionePremio(a, arbitro)}
@@ -77,6 +78,52 @@ export function render() {
 
     <h2>L'app</h2>
     ${crediti()}`;
+}
+
+/**
+ * Apertura e chiusura della stagione. La data chiude da sola, il pulsante
+ * scavalca la data in entrambe le direzioni: si puo' chiudere prima se il
+ * gruppo ha gia' finito, e si puo' riaprire perche' qualcuno arrivera' sempre
+ * a giochi fatti con la foto che si era dimenticato.
+ */
+function sezioneStagione(a, arbitro) {
+  const chiusa = stagioneChiusa();
+  const inAttesa = proposteInAttesa().length;
+
+  return `
+    <h2>Stagione</h2>
+    <div class="card">
+      <div class="banner ${chiusa ? '' : 'ok'}">
+        ${chiusa
+          ? '🔒 Stagione chiusa: la classifica è definitiva e non si registrano più eventi.'
+          : '🟢 Stagione aperta: si può ancora segnare.'}
+      </div>
+
+      ${a.chiude_il && !a.chiusa_il
+        ? `<p class="muted">Chiusura automatica: <b>${esc(dataOra(a.chiude_il))}</b></p>`
+        : ''}
+      ${a.chiusa_il
+        ? `<p class="muted">Chiusa a mano il ${esc(dataOra(a.chiusa_il))}</p>`
+        : ''}
+
+      ${arbitro ? `
+        <div class="sep"></div>
+        <div class="field">
+          <label for="dataChiusura">Chiude da sola il</label>
+          <input id="dataChiusura" type="datetime-local" value="${perCampoData(a.chiude_il)}">
+        </div>
+        <button class="block" data-act="salva-data-chiusura">Salva la data</button>
+
+        <div class="sep"></div>
+        ${chiusa
+          ? `<button class="block primary" data-act="riapri-stagione">Riapri la stagione</button>
+             <p class="muted mt">Riaprendo si toglie anche la data programmata.</p>`
+          : `<button class="block danger" data-act="chiudi-stagione">Chiudi la stagione adesso</button>
+             ${inAttesa
+               ? `<p class="muted mt">⚠️ Hai ${inAttesa} segnalazion${inAttesa === 1 ? 'e' : 'i'} in sospeso: giudicale prima di chiudere, dopo non si potrà più.</p>`
+               : ''}`}`
+      : ''}
+    </div>`;
 }
 
 /**
@@ -360,6 +407,30 @@ export const azioni = {
         toast('Codice: ' + codice);
       }
     }
+  },
+
+  'salva-data-chiusura'() {
+    const valore = document.getElementById('dataChiusura').value;
+    const quando = valore ? new Date(valore).toISOString() : null;
+    return conRicarica('Salvo...', () => api.impostaDataChiusura(stato.campId, quando),
+      quando ? 'Data di chiusura impostata' : 'Chiusura automatica tolta');
+  },
+
+  'chiudi-stagione'() {
+    const inAttesa = proposteInAttesa().length;
+    if (!conferma(
+      'Chiudere la stagione?\n\n' +
+      'La classifica diventa definitiva: nessuno potrà più segnare, approvare ' +
+      'o cancellare eventi.' +
+      (inAttesa ? `\n\nATTENZIONE: hai ${inAttesa} segnalazioni non giudicate, che resteranno tali.` : '') +
+      '\n\nPotrai comunque riaprire.'
+    )) return;
+    return conRicarica('Chiudo...', () => api.chiudiStagione(stato.campId), 'Stagione chiusa');
+  },
+
+  'riapri-stagione'() {
+    if (!conferma('Riaprire la stagione? Si torna a poter segnare, e la data di chiusura automatica viene tolta.')) return;
+    return conRicarica('Riapro...', () => api.riapriStagione(stato.campId), 'Stagione riaperta');
   },
 
   'scegli-bandiera'() {

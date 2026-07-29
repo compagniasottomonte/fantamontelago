@@ -84,6 +84,8 @@ alter table public.accampamenti add column if not exists premio text not null de
 alter table public.accampamenti add column if not exists bandiera_path text;
 alter table public.regole add column if not exists protetta boolean not null default false;
 alter table public.personaggi add column if not exists titolo text not null default '';
+alter table public.accampamenti add column if not exists chiude_il timestamptz;
+alter table public.accampamenti add column if not exists chiusa_il timestamptz;
 
 create index if not exists eventi_accampamento_idx on public.eventi (accampamento_id, stato);
 create index if not exists eventi_personaggio_idx  on public.eventi (personaggio_id);
@@ -112,6 +114,19 @@ returns boolean language sql security definer stable set search_path = public as
     select 1 from public.membri m
     where m.accampamento_id = camp and m.user_id = auth.uid() and m.ruolo = 'arbitro'
   );
+$$;
+
+-- A stagione chiusa la classifica e' definitiva: non si registrano piu'
+-- eventi. La chiusura arriva dalla data programmata oppure dal pulsante
+-- dell'arbitro, e non serve nessun processo che giri di notte: basta
+-- confrontare la data al momento del bisogno.
+create or replace function public.stagione_chiusa(camp uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select coalesce((
+    select a.chiusa_il is not null
+        or (a.chiude_il is not null and now() > a.chiude_il)
+    from public.accampamenti a where a.id = camp
+  ), false);
 $$;
 
 -- Cast tollerante: i path dello storage sono testo libero e un nome di
@@ -185,6 +200,10 @@ create trigger trg_prima_inserimento_accampamento
 create or replace function public.forza_stato_evento()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  if public.stagione_chiusa(new.accampamento_id) then
+    raise exception 'La stagione è chiusa: la classifica non si tocca più';
+  end if;
+
   new.proposto_da := coalesce(new.proposto_da, auth.uid());
 
   -- Punteggio e descrizione non si accettano dal browser: si rileggono dalla
@@ -324,11 +343,15 @@ create policy evt_update on public.eventi
   using (public.is_arbitro(accampamento_id)
          or (proposto_da = auth.uid() and stato = 'proposto'));
 
+-- Anche la cancellazione si blocca a stagione chiusa. Il divieto sta nella
+-- policy e non in un trigger perche' la RLS non vale per le cancellazioni a
+-- cascata: eliminare un accampamento chiuso deve restare possibile.
 drop policy if exists evt_delete on public.eventi;
 create policy evt_delete on public.eventi
   for delete to authenticated
-  using (public.is_arbitro(accampamento_id)
-         or (proposto_da = auth.uid() and stato = 'proposto'));
+  using (not public.stagione_chiusa(accampamento_id)
+         and (public.is_arbitro(accampamento_id)
+              or (proposto_da = auth.uid() and stato = 'proposto')));
 
 -- ===================================================================
 -- 5. INGRESSO IN UN ACCAMPAMENTO

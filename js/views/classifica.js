@@ -4,8 +4,10 @@
 //           per personaggio e riepilogo degli ultimi eventi approvati.
 // Autore:   Daniele Polucci
 
-import { esc, punti, dataBreve } from '../ui.js';
-import { stato, bus, classifica, eventiValidi, nomePersonaggio, mioPersonaggio, titoloDi } from '../stato.js';
+import { condividiRecap, condividiPoster } from '../card.js';
+import { esc, punti, dataBreve, toast, occupato } from '../ui.js';
+import { stato, bus, classifica, eventiValidi, nomePersonaggio, mioPersonaggio,
+         titoloDi, stagioneChiusa, statistiche } from '../stato.js';
 
 export function render() {
   const cl = classifica();
@@ -60,6 +62,7 @@ export function render() {
     </div>`).join('');
 
   return `
+    ${fineStagione()}
     ${strisciaPremio}
     ${invitoRiconoscersi()}
     <div class="podio">${podio.map(cartaPodio).join('')}</div>
@@ -97,8 +100,53 @@ function invitoRiconoscersi() {
     </div>`;
 }
 
+/** A stagione chiusa la classifica e' definitiva e si sbloccano le immagini finali. */
+function fineStagione() {
+  if (!stagioneChiusa()) return '';
+  const mio = mioPersonaggio();
+
+  return `
+    <div class="card center finale">
+      <h3>🏁 Stagione chiusa</h3>
+      <p class="muted">La classifica è definitiva. Non si registrano più eventi.</p>
+      <div class="sep"></div>
+      ${mio
+        ? '<button class="primary block" data-act="mio-recap">📤 Il mio riepilogo</button>'
+        : '<p class="muted">Per avere il tuo riepilogo devi prima riconoscerti in classifica, dalla scheda Info.</p>'}
+      ${stato.dati.arbitro
+        ? '<button class="block mt" data-act="poster-classifica">📤 Manifesto della classifica</button>'
+        : ''}
+    </div>`;
+}
+
+/** Racchiude generazione e condivisione, uguali per entrambe le immagini. */
+async function produci(testoAttesa, operazione) {
+  occupato(true, testoAttesa);
+  try {
+    const esito = await operazione();
+    if (esito === 'scaricata') toast('Immagine salvata fra i download');
+    else if (esito === 'condivisa') toast('Condivisa');
+  } catch (e) {
+    toast(e.message || 'Non sono riuscito a creare l\'immagine', 'error');
+  } finally {
+    occupato(false);
+  }
+}
+
 export const azioni = {
   'vai-riconoscimento'() { bus.vaiA('gestione'); },
+
+  'mio-recap'() {
+    const mio = mioPersonaggio();
+    return produci('Preparo il tuo riepilogo...', () => condividiRecap(
+      mio, titoloDi(mio.id), statistiche(mio.id), stato.dati.accampamento,
+    ));
+  },
+
+  'poster-classifica'() {
+    const cl = classifica().map((p) => ({ ...p, titolo: titoloDi(p.id) }));
+    return produci('Preparo il manifesto...', () => condividiPoster(stato.dati.accampamento, cl));
+  },
 };
 
 /** Storico dei punti di un singolo personaggio, mostrato aprendo la riga. */

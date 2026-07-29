@@ -7,12 +7,20 @@
 
 import * as api from '../api.js';
 import { esc, punti, toast, occupato, urlSicuro } from '../ui.js';
-import { stato, bus } from '../stato.js';
+import { stato, bus, stagioneChiusa } from '../stato.js';
 
 let fotoScelta = null;
 
 export function render() {
   const { personaggi, regole, arbitro } = stato.dati;
+
+  if (stagioneChiusa()) {
+    return `<div class="empty">
+      <p>🔒 <b>La stagione è chiusa.</b></p>
+      <p>La classifica è definitiva: non si registrano più eventi.</p>
+      ${arbitro ? '<p>Se serve, puoi riaprirla dalla scheda Gestione.</p>' : ''}
+    </div>`;
+  }
 
   if (!personaggi.length || !regole.length) {
     return `<div class="empty">

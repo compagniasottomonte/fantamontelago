@@ -59,6 +59,35 @@ export function classifica() {
     .sort((a, b) => b.punti - a.punti || a.nome.localeCompare(b.nome));
 }
 
+/**
+ * La stagione e' chiusa se l'arbitro l'ha chiusa a mano oppure se la data
+ * programmata e' passata. Nessun processo periodico: si confronta la data.
+ */
+export function stagioneChiusa() {
+  const a = stato.dati?.accampamento;
+  if (!a) return false;
+  if (a.chiusa_il) return true;
+  return !!a.chiude_il && new Date(a.chiude_il) < new Date();
+}
+
+/** I numeri che finiscono nel riepilogo personale. */
+export function statistiche(personaggioId) {
+  const suoi = eventiValidi().filter((e) => e.personaggio_id === personaggioId);
+  const cl = classifica();
+  const positivi = suoi.filter((e) => e.punti > 0).sort((a, b) => b.punti - a.punti);
+  const negativi = suoi.filter((e) => e.punti < 0).sort((a, b) => a.punti - b.punti);
+
+  return {
+    punti: suoi.reduce((somma, e) => somma + e.punti, 0),
+    eventi: suoi.length,
+    giornate: new Set(suoi.map((e) => e.giornata)).size,
+    posizione: cl.findIndex((x) => x.id === personaggioId) + 1,
+    suTotale: cl.length,
+    migliore: positivi[0] || null,
+    peggiore: negativi[0] || null,
+  };
+}
+
 export function personaggio(id) {
   return (stato.dati?.personaggi || []).find((p) => p.id === id);
 }

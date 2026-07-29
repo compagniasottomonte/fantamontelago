@@ -110,11 +110,7 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
   canvas.height = ALT;
   const ctx = canvas.getContext('2d');
 
-  const [foto, bandiera, logo] = await Promise.all([
-    immagine(urlFoto),
-    immagine(urlBandiera),
-    immagine('assets/icona-app-192.png'),
-  ]);
+  const foto = await immagine(urlFoto);
 
   // --- sfondo ---
   if (foto) {
@@ -136,22 +132,7 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
   ctx.lineWidth = 6;
   ctx.strokeRect(38, 38, LARG - 76, ALT - 76);
 
-  // --- in alto: bandiera del clan e nome dell'accampamento ---
-  let xTesto = 90;
-  if (bandiera) {
-    disegnaContenendo(ctx, bandiera, 90, 100, 150, 150);
-    xTesto = 275;
-  }
-
-  ctx.textAlign = 'left';
-  ctx.fillStyle = COLORI.oro2;
-  ctx.font = `600 40px ${FONT}`;
-  for (const [i, riga] of inRighe(ctx, accampamento.nome, LARG - xTesto - 90, 2).entries()) {
-    ctx.fillText(riga, xTesto, 150 + i * 50);
-  }
-  ctx.fillStyle = 'rgba(232,228,213,.65)';
-  ctx.font = `400 30px ${FONT}`;
-  ctx.fillText(accampamento.edizione || 'Montelago Celtic Festival', xTesto, 250);
+  await intestazione(ctx, accampamento, urlBandiera);
 
   // --- in basso: il verdetto ---
   //
@@ -190,7 +171,32 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
     y += 86;
   }
 
-  // --- piede: logo e firma ---
+  await piede(ctx);
+  return new Promise((ok) => canvas.toBlob(ok, 'image/png'));
+}
+
+/** Intestazione comune alle immagini finali: bandiera e nome del clan. */
+async function intestazione(ctx, accampamento, urlBandiera) {
+  const bandiera = await immagine(urlBandiera);
+  let x = 90;
+  if (bandiera) {
+    disegnaContenendo(ctx, bandiera, 90, 100, 150, 150);
+    x = 275;
+  }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = COLORI.oro2;
+  ctx.font = `600 40px ${FONT}`;
+  for (const [i, riga] of inRighe(ctx, accampamento.nome, LARG - x - 90, 2).entries()) {
+    ctx.fillText(riga, x, 150 + i * 50);
+  }
+  ctx.fillStyle = 'rgba(232,228,213,.65)';
+  ctx.font = `400 30px ${FONT}`;
+  ctx.fillText(accampamento.edizione || 'Montelago Celtic Festival', x, 250);
+}
+
+/** Piede comune: logo e firma. */
+async function piede(ctx) {
+  const logo = await immagine('assets/icona-app-192.png');
   if (logo) ctx.drawImage(logo, 90, ALT - 235, 110, 110);
 
   ctx.textAlign = 'left';
@@ -200,7 +206,176 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
   ctx.fillStyle = 'rgba(232,228,213,.55)';
   ctx.font = `400 27px ${FONT}`;
   ctx.fillText('gioco amatoriale della Compagnia di Sotto Monte', 225, ALT - 135);
+}
 
+/** Una riga di statistica: etichetta a sinistra, valore a destra. */
+function rigaDato(ctx, y, etichetta, valore, colore) {
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(232,228,213,.7)';
+  ctx.font = `400 34px ${FONT}`;
+  ctx.fillText(etichetta, 100, y);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = colore || COLORI.chiaro;
+  ctx.font = `700 40px ${FONT}`;
+  ctx.fillText(String(valore), LARG - 100, y);
+
+  ctx.strokeStyle = 'rgba(44,70,50,.9)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(100, y + 24);
+  ctx.lineTo(LARG - 100, y + 24);
+  ctx.stroke();
+}
+
+/**
+ * Il riepilogo personale di fine stagione: com'e' andata a una persona sola.
+ * E' quello che si condivide piu' volentieri, perche' parla di chi lo guarda.
+ */
+export async function cardRecap({ personaggio, titolo, dati, accampamento, urlBandiera }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = LARG;
+  canvas.height = ALT;
+  const ctx = canvas.getContext('2d');
+
+  sfondoDecorativo(ctx);
+  ctx.strokeStyle = COLORI.oro;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(38, 38, LARG - 76, ALT - 76);
+
+  await intestazione(ctx, accampamento, urlBandiera);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(232,228,213,.6)';
+  ctx.font = `400 32px ${FONT}`;
+  ctx.fillText('IL MIO MONTELAGO', LARG / 2, 400);
+
+  ctx.fillStyle = COLORI.oro;
+  ctx.font = `700 76px ${FONT}`;
+  ctx.fillText(inRighe(ctx, String(personaggio?.nome || '').toUpperCase(), LARG - 180, 1)[0] || '', LARG / 2, 490);
+
+  if (titolo) {
+    ctx.fillStyle = COLORI.oro2;
+    ctx.font = `italic 400 44px ${FONT}`;
+    ctx.fillText(inRighe(ctx, titolo, LARG - 180, 1)[0], LARG / 2, 555);
+  }
+
+  // Il totale, che e' il dato che tutti cercano per primo.
+  const positivo = dati.punti >= 0;
+  ctx.fillStyle = positivo ? COLORI.verde : COLORI.rosso;
+  ctx.font = `800 210px ${FONT}`;
+  ctx.fillText(`${positivo ? '+' : ''}${dati.punti}`, LARG / 2, 760);
+
+  ctx.fillStyle = 'rgba(232,228,213,.6)';
+  ctx.font = `400 32px ${FONT}`;
+  ctx.fillText('punti totali', LARG / 2, 810);
+
+  let y = 940;
+  rigaDato(ctx, y, 'Posizione finale', `${dati.posizione}° su ${dati.suTotale}`, COLORI.oro2);
+  y += 100;
+  rigaDato(ctx, y, 'Imprese registrate', dati.eventi);
+  y += 100;
+  rigaDato(ctx, y, 'Giornate a referto', dati.giornate);
+
+  if (dati.migliore) {
+    y += 100;
+    rigaDato(ctx, y, inRighe(ctx, dati.migliore.regola_nome, 560, 1)[0],
+      `+${dati.migliore.punti}`, COLORI.verde);
+  }
+  if (dati.peggiore) {
+    y += 100;
+    rigaDato(ctx, y, inRighe(ctx, dati.peggiore.regola_nome, 560, 1)[0],
+      String(dati.peggiore.punti), COLORI.rosso);
+  }
+
+  await piede(ctx);
+  return new Promise((ok) => canvas.toBlob(ok, 'image/png'));
+}
+
+/** Il manifesto dell'accampamento: la classifica finale in bella copia. */
+export async function cardPoster({ accampamento, classifica, urlBandiera }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = LARG;
+  canvas.height = ALT;
+  const ctx = canvas.getContext('2d');
+
+  sfondoDecorativo(ctx);
+  ctx.strokeStyle = COLORI.oro;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(38, 38, LARG - 76, ALT - 76);
+
+  await intestazione(ctx, accampamento, urlBandiera);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = COLORI.oro;
+  ctx.font = `700 58px ${FONT}`;
+  ctx.fillText('CLASSIFICA FINALE', LARG / 2, 400);
+
+  // Con tanti partecipanti si mostrano i primi e si conta il resto: meglio
+  // dieci righe leggibili che venticinque francobolli.
+  //
+  // Lo spazio si calcola da dove finisce l'elenco, che cambia a seconda che ci
+  // sia o meno il premio da stampare sotto: con misure fisse, il "e altri N"
+  // andava a finire sopra al testo del premio.
+  const yInizio = 490;
+  const yFine = accampamento.premio ? 1440 : 1620;
+  const spazio = yFine - yInizio;
+
+  const massimo = Math.max(1, Math.min(12, Math.floor(spazio / 62)));
+  const mostrati = classifica.slice(0, massimo);
+  const restanti = classifica.length - mostrati.length;
+  const passo = Math.min(96, Math.floor(spazio / Math.max(mostrati.length, 1)));
+
+  let y = yInizio;
+
+  for (const [i, p] of mostrati.entries()) {
+    const medaglia = ['🥇', '🥈', '🥉'][i];
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = i < 3 ? COLORI.oro : 'rgba(232,228,213,.55)';
+    ctx.font = `700 40px ${FONT}`;
+    ctx.fillText(medaglia ? `${i + 1}` : `${i + 1}`, 100, y);
+
+    ctx.fillStyle = COLORI.chiaro;
+    ctx.font = `${i < 3 ? 700 : 400} ${i < 3 ? 48 : 42}px ${FONT}`;
+    ctx.fillText(inRighe(ctx, p.nome, 560, 1)[0] || '', 180, y);
+
+    if (p.titolo) {
+      ctx.fillStyle = 'rgba(240,196,106,.7)';
+      ctx.font = `italic 400 28px ${FONT}`;
+      ctx.fillText(inRighe(ctx, p.titolo, 560, 1)[0], 180, y + 34);
+    }
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = p.punti >= 0 ? COLORI.verde : COLORI.rosso;
+    ctx.font = `700 48px ${FONT}`;
+    ctx.fillText(`${p.punti > 0 ? '+' : ''}${p.punti}`, LARG - 100, y);
+
+    y += passo;
+  }
+
+  if (restanti > 0) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(232,228,213,.5)';
+    ctx.font = `400 32px ${FONT}`;
+    ctx.fillText(`e altri ${restanti}`, LARG / 2, y + 10);
+  }
+
+  if (accampamento.premio) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = COLORI.oro;
+    ctx.font = `600 30px ${FONT}`;
+    ctx.fillText('PREMIO IN PALIO', LARG / 2, ALT - 400);
+    ctx.fillStyle = COLORI.chiaro;
+    ctx.font = `400 34px ${FONT}`;
+    let yp = ALT - 350;
+    for (const riga of inRighe(ctx, accampamento.premio, LARG - 200, 3)) {
+      ctx.fillText(riga, LARG / 2, yp);
+      yp += 44;
+    }
+  }
+
+  await piede(ctx);
   return new Promise((ok) => canvas.toBlob(ok, 'image/png'));
 }
 
@@ -241,6 +416,31 @@ export async function condividiEvento(evento, personaggio, accampamento, titolo)
   });
   const nome = `fanta-montelago-${(personaggio?.nome || 'evento').toLowerCase().replace(/\W+/g, '-')}.png`;
   const testo = `${personaggio?.nome}: ${evento.regola_nome} (${evento.punti > 0 ? '+' : ''}${evento.punti}) — Fanta Montelago`;
+
+  return condividi(blob, nome, testo);
+}
+
+/** Produce e condivide il riepilogo personale di fine stagione. */
+export async function condividiRecap(personaggio, titolo, dati, accampamento) {
+  const urlBandiera = await api.urlFoto(accampamento.bandiera_path);
+  const blob = await cardRecap({ personaggio, titolo, dati, accampamento, urlBandiera });
+
+  const nome = `il-mio-montelago-${(personaggio?.nome || 'recap').toLowerCase().replace(/\W+/g, '-')}.png`;
+  const testo = `Il mio Montelago: ${dati.punti > 0 ? '+' : ''}${dati.punti} punti, ${dati.posizione}° su ${dati.suTotale}. ${titolo}`;
+
+  return condividi(blob, nome, testo);
+}
+
+/** Produce e condivide il manifesto con la classifica finale. */
+export async function condividiPoster(accampamento, classifica) {
+  const urlBandiera = await api.urlFoto(accampamento.bandiera_path);
+  const blob = await cardPoster({ accampamento, classifica, urlBandiera });
+
+  const nome = `classifica-${(accampamento.nome || 'accampamento').toLowerCase().replace(/\W+/g, '-')}.png`;
+  const vincitore = classifica[0];
+  const testo = vincitore
+    ? `Classifica finale di ${accampamento.nome}: vince ${vincitore.nome} con ${vincitore.punti} punti.`
+    : `Classifica finale di ${accampamento.nome}`;
 
   return condividi(blob, nome, testo);
 }

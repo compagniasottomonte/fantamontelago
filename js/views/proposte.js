@@ -7,7 +7,7 @@
 
 import * as api from '../api.js';
 import { esc, punti, dataBreve, toast, occupato, conferma, anteprimaVideo } from '../ui.js';
-import { stato, bus, nomePersonaggio, nomeMembro, proposteInAttesa } from '../stato.js';
+import { stato, bus, nomePersonaggio, nomeMembro, proposteInAttesa, stagioneChiusa } from '../stato.js';
 
 export function render() {
   const attesa = proposteInAttesa();
@@ -22,12 +22,16 @@ export function render() {
     </div>`;
   }
 
+  const chiusa = stagioneChiusa();
   return `
-    <div class="banner">${attesa.length} segnalazion${attesa.length === 1 ? 'e' : 'i'} in attesa</div>
-    ${attesa.map((e) => scheda(e, arbitro)).join('')}`;
+    <div class="banner">
+      ${attesa.length} segnalazion${attesa.length === 1 ? 'e' : 'i'} in attesa
+      ${chiusa ? '<br>🔒 Stagione chiusa: resteranno così finché non la riapri.' : ''}
+    </div>
+    ${attesa.map((e) => scheda(e, arbitro, chiusa)).join('')}`;
 }
 
-function scheda(e, arbitro) {
+function scheda(e, arbitro, chiusa) {
   const mia = e.proposto_da === stato.utente.id;
   const video = anteprimaVideo(e.video_url);
 
@@ -58,7 +62,8 @@ function scheda(e, arbitro) {
       ) : ''}
 
       <div class="sep"></div>
-      ${arbitro ? `
+      ${chiusa ? '<div class="muted">🔒 Stagione chiusa: questa segnalazione resta in sospeso.</div>'
+      : arbitro ? `
         <div class="row">
           <button class="primary grow" data-act="approva" data-id="${e.id}">✅ Approva</button>
           <button class="grow" data-act="rifiuta" data-id="${e.id}">❌ Rifiuta</button>

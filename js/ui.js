@@ -28,6 +28,14 @@ export function dataOra(iso) {
   });
 }
 
+/** Converte una data ISO nel formato che vuole <input type="datetime-local">. */
+export function perCampoData(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 let timerToast;
 export function toast(messaggio, tipo = 'info') {
   const el = document.getElementById('toast');

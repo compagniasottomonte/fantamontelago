@@ -205,6 +205,22 @@ export async function slegaPersonaggio(personaggioId) {
   esplodi(error);
 }
 
+export async function chiudiStagione(accampamentoId) {
+  await aggiornaAccampamento(accampamentoId, { chiusa_il: new Date().toISOString() });
+}
+
+/**
+ * Riaprendo si toglie anche la data programmata: se fosse gia' passata,
+ * l'accampamento si richiuderebbe da solo un istante dopo.
+ */
+export async function riapriStagione(accampamentoId) {
+  await aggiornaAccampamento(accampamentoId, { chiusa_il: null, chiude_il: null });
+}
+
+export async function impostaDataChiusura(accampamentoId, quando) {
+  await aggiornaAccampamento(accampamentoId, { chiude_il: quando || null });
+}
+
 export async function esciDaAccampamento(accampamentoId, userId) {
   const { error } = await client()
     .from('membri').delete()

@@ -7,7 +7,8 @@
 import * as api from '../api.js';
 import { condividiEvento } from '../card.js';
 import { esc, punti, toast, occupato, conferma, anteprimaVideo } from '../ui.js';
-import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro, personaggio, titoloDi } from '../stato.js';
+import { stato, bus, eventiValidi, nomePersonaggio, nomeMembro, personaggio, titoloDi,
+         stagioneChiusa } from '../stato.js';
 
 export function render() {
   const eventi = eventiValidi();
@@ -67,7 +68,7 @@ function scheda(e) {
 
       <div class="between mt">
         <span class="muted small">Segnato da ${esc(nomeMembro(e.proposto_da))}</span>
-        ${stato.dati.arbitro
+        ${stato.dati.arbitro && !stagioneChiusa()
           ? `<button class="icon danger" data-act="annulla-evento" data-id="${e.id}">Annulla</button>`
           : ''}
       </div>
