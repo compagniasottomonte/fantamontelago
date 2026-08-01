@@ -77,7 +77,10 @@ export function render() {
         <button class="block" data-act="scegli-foto">
           ${fotoScelta ? '📷 Cambia foto' : '📷 Scatta o scegli una foto'}
         </button>
-        <input type="file" id="foto" accept="image/*" capture="environment" hidden>
+        <!-- Niente attributo "capture": aprirebbe subito la fotocamera
+             saltando la galleria, e al festival si fotografa sul momento per
+             caricare dopo, quando torna la linea. -->
+        <input type="file" id="foto" accept="image/*" hidden>
         <div id="anteprima">${fotoScelta ? `<img class="preview" src="${URL.createObjectURL(fotoScelta)}" alt="anteprima">` : ''}</div>
       </div>
 
