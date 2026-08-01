@@ -139,8 +139,10 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
   // Nome e punteggio condividono la stessa riga, e sotto scorre la regola.
   // Tenere il numero accanto al nome invece che in fondo evita che una regola
   // dal nome lungo, scendendo su tre righe, gli finisca addosso.
+  // Con la nota da stampare serve piu' spazio, quindi il blocco parte piu'
+  // in alto invece di schiacciarsi contro il piede.
   const positivo = evento.punti >= 0;
-  const rigaVerdetto = ALT - 620;
+  const rigaVerdetto = ALT - (evento.nota ? 680 : 620);
 
   // Il nome si ferma a meta' larghezza: oltre finirebbe sotto al punteggio,
   // che occupa la meta' destra della stessa riga.
@@ -166,9 +168,21 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
   y += 90;
   ctx.fillStyle = COLORI.chiaro;
   ctx.font = `700 74px ${FONT}`;
-  for (const riga of inRighe(ctx, evento.regola_nome, LARG - 180, 3)) {
+  for (const riga of inRighe(ctx, evento.regola_nome, LARG - 180, evento.nota ? 2 : 3)) {
     ctx.fillText(riga, 90, y);
     y += 86;
+  }
+
+  // La nota e' il racconto dell'episodio: senza, la card dice cosa e' successo
+  // ma non perche' faccia ridere.
+  if (evento.nota) {
+    y += 4;
+    ctx.fillStyle = 'rgba(232,228,213,.82)';
+    ctx.font = `italic 400 38px ${FONT}`;
+    for (const riga of inRighe(ctx, `« ${evento.nota} »`, LARG - 180, 2)) {
+      ctx.fillText(riga, 90, y);
+      y += 44;
+    }
   }
 
   await piede(ctx);
@@ -184,28 +198,43 @@ async function intestazione(ctx, accampamento, urlBandiera) {
     x = 275;
   }
   ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(232,228,213,.55)';
+  ctx.font = `600 24px ${FONT}`;
+  ctx.fillText('ACCAMPAMENTO', x, 118);
+
   ctx.fillStyle = COLORI.oro2;
   ctx.font = `600 40px ${FONT}`;
   for (const [i, riga] of inRighe(ctx, accampamento.nome, LARG - x - 90, 2).entries()) {
-    ctx.fillText(riga, x, 150 + i * 50);
+    ctx.fillText(riga, x, 166 + i * 48);
   }
   ctx.fillStyle = 'rgba(232,228,213,.65)';
   ctx.font = `400 30px ${FONT}`;
-  ctx.fillText(accampamento.edizione || 'Montelago Celtic Festival', x, 250);
+  ctx.fillText(accampamento.edizione || 'Montelago Celtic Festival', x, 258);
 }
 
-/** Piede comune: logo e firma. */
+/**
+ * Piede comune: logo, nome del gioco e invito a richiedere l'app.
+ * E' la parte che lavora quando la card finisce su Instagram davanti a
+ * qualcuno che non sa cosa sia.
+ */
 async function piede(ctx) {
   const logo = await immagine('assets/icona-app-192.png');
-  if (logo) ctx.drawImage(logo, 90, ALT - 235, 110, 110);
+  if (logo) ctx.drawImage(logo, 90, ALT - 230, 96, 96);
 
   ctx.textAlign = 'left';
   ctx.fillStyle = COLORI.chiaro;
-  ctx.font = `700 40px ${FONT}`;
-  ctx.fillText('FANTA MONTELAGO', 225, ALT - 175);
-  ctx.fillStyle = 'rgba(232,228,213,.55)';
-  ctx.font = `400 27px ${FONT}`;
-  ctx.fillText('gioco amatoriale della Compagnia di Sotto Monte', 225, ALT - 135);
+  ctx.font = `700 36px ${FONT}`;
+  ctx.fillText('FANTA MONTELAGO', 210, ALT - 198);
+
+  ctx.fillStyle = COLORI.oro2;
+  ctx.font = `600 25px ${FONT}`;
+  ctx.fillText(inRighe(ctx, 'Richiedi l\'app alla Compagnia di Sotto Monte su Instagram', 780, 1)[0],
+    210, ALT - 164);
+
+  ctx.fillStyle = 'rgba(232,228,213,.45)';
+  ctx.font = `400 21px ${FONT}`;
+  ctx.fillText(inRighe(ctx, 'progetto amatoriale dei fan · non è l\'app ufficiale del festival', 780, 1)[0],
+    210, ALT - 134);
 }
 
 /** Una riga di statistica: etichetta a sinistra, valore a destra. */

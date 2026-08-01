@@ -73,13 +73,18 @@ export function render() {
       </div>
 
       <div class="field">
-        <label>Foto-prova</label>
-        <button class="block" data-act="scegli-foto">
-          ${fotoScelta ? '📷 Cambia foto' : '📷 Scatta o scegli una foto'}
-        </button>
-        <!-- Niente attributo "capture": aprirebbe subito la fotocamera
-             saltando la galleria, e al festival si fotografa sul momento per
-             caricare dopo, quando torna la linea. -->
+        <label>Foto-prova${fotoScelta ? ' — scelta' : ''}</label>
+        <!--
+          Due pulsanti e due campi distinti invece di uno solo: senza
+          l'attributo "capture" certi telefoni vanno dritti alla galleria,
+          con l'attributo aprono solo la fotocamera. Separandoli, entrambe le
+          strade restano sempre disponibili su qualunque telefono.
+        -->
+        <div class="row wrap pari">
+          <button class="grow" data-act="scatta-foto">📷 Scatta ora</button>
+          <button class="grow" data-act="scegli-foto">🖼️ Dalla galleria</button>
+        </div>
+        <input type="file" id="fotoCamera" accept="image/*" capture="environment" hidden>
         <input type="file" id="foto" accept="image/*" hidden>
         <div id="anteprima">${fotoScelta ? `<img class="preview" src="${URL.createObjectURL(fotoScelta)}" alt="anteprima">` : ''}</div>
       </div>
@@ -128,6 +133,10 @@ export const azioni = {
     document.getElementById('foto').click();
   },
 
+  'scatta-foto'() {
+    document.getElementById('fotoCamera').click();
+  },
+
   async 'invia-evento'() {
     const personaggioId = val('selP');
     const regolaId = val('selR');
@@ -164,7 +173,8 @@ export const azioni = {
 /** Registrato da app.js: il change su input file non passa dal bus delle azioni. */
 export function collegaInputFoto() {
   document.addEventListener('change', (ev) => {
-    if (ev.target.id !== 'foto' || !ev.target.files?.length) return;
+    const daCampoFoto = ev.target.id === 'foto' || ev.target.id === 'fotoCamera';
+    if (!daCampoFoto || !ev.target.files?.length) return;
     const file = ev.target.files[0];
     if (file.size > 25 * 1024 * 1024) {
       return toast('Foto troppo grande (oltre 25 MB)', 'error');
