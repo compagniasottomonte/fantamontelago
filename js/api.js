@@ -38,6 +38,9 @@ function esplodi(errore) {
     const secondi = m.match(/after (\d+)/i)[1];
     throw new Error(`Aspetta ${secondi} secondi prima di richiedere un altro link.`);
   }
+  if (/(otp|token).*(expired|invalid)|invalid.*(otp|token)/i.test(m)) {
+    throw new Error('Codice sbagliato o scaduto: controlla di averlo copiato bene, o richiedine uno nuovo');
+  }
   if (/Email not confirmed/i.test(m)) {
     throw new Error('Devi prima aprire il link di conferma che ti è arrivato per email');
   }
@@ -75,6 +78,23 @@ export async function inviaMagicLink(email, nome) {
       emailRedirectTo: window.location.origin + window.location.pathname,
       data: nome ? { nome: nome.trim() } : undefined,
     },
+  });
+  esplodi(error);
+}
+
+/**
+ * Entra digitando il codice ricevuto per email, invece di aprire il link.
+ *
+ * E' la strada piu' affidabile delle due: il link, toccato dentro l'app della
+ * posta, si apre spesso in un browser interno diverso da quello dove si sta
+ * usando Fanta Montelago, e l'accesso finisce li' invece che qui. Col codice
+ * si resta nella stessa scheda e il problema non esiste.
+ */
+export async function verificaCodice(email, codice) {
+  const { error } = await client().auth.verifyOtp({
+    email: email.trim(),
+    token: codice.trim(),
+    type: 'email',
   });
   esplodi(error);
 }
@@ -195,6 +215,19 @@ export async function rivendicaPersonaggio(accampamentoId, personaggioId) {
 export async function impostaTitolo(personaggioId, titolo) {
   const { error } = await client()
     .rpc('imposta_titolo', { pers: personaggioId, nuovo: titolo || '' });
+  esplodi(error);
+}
+
+/**
+ * Cambia il nome con cui una persona compare nel gruppo. Le policy lasciano
+ * farlo a ciascuno sul proprio e all'arbitro su chiunque: chi sbaglia a
+ * scriverlo entrando deve poter rimediare senza uscire e rientrare.
+ */
+export async function aggiornaNomeMembro(membroId, nome) {
+  const { error } = await client()
+    .from('membri')
+    .update({ nome_visualizzato: nome.trim().slice(0, 40) })
+    .eq('id', membroId);
   esplodi(error);
 }
 

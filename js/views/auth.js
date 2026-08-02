@@ -51,15 +51,28 @@ export function renderLogin() {
         <div class="logo">✉</div>
         <h1>Controlla la posta</h1>
         <p class="muted">
-          Ho mandato un link di accesso a <b>${esc(mailInviataA)}</b>.
-          Aprilo da questo dispositivo per entrare.
+          Ho mandato un codice a <b>${esc(mailInviataA)}</b>.
         </p>
       </div>
+
       <div class="card">
-        <p class="muted">
-          Non arriva? Controlla lo spam, oppure riprova fra un minuto.
+        <div class="field">
+          <label for="codiceAccesso">Codice ricevuto</label>
+          <input id="codiceAccesso" inputmode="numeric" autocomplete="one-time-code"
+                 maxlength="8" placeholder="000000"
+                 style="text-align:center;letter-spacing:.3em;font-size:1.6rem">
+        </div>
+        <button class="primary block" data-act="verifica-codice">Entra</button>
+        <p class="muted mt">
+          Nella stessa mail c'è anche un link, ma <b>conviene digitare il codice
+          qui</b>: toccando il link dall'app della posta si apre spesso un
+          browser diverso da questo, e l'accesso finisce lì invece che qui.
         </p>
-        <button class="block" data-act="cambia-email">Usa un altro indirizzo</button>
+      </div>
+
+      <div class="card">
+        <p class="muted">Non arriva? Guarda nello spam, poi riprova fra qualche minuto.</p>
+        <button class="block ghost" data-act="cambia-email">Usa un altro indirizzo</button>
       </div>`;
   }
 
@@ -151,6 +164,22 @@ export const azioni = {
       await api.inviaMagicLink(email, nome);
       mailInviataA = email;
       bus.disegna();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      occupato(false);
+    }
+  },
+
+  async 'verifica-codice'() {
+    const codice = val('codiceAccesso');
+    if (codice.length < 6) return toast('Il codice ha sei cifre', 'error');
+
+    occupato(true, 'Verifico...');
+    try {
+      await api.verificaCodice(mailInviataA, codice);
+      mailInviataA = null;
+      // Il cambio di sessione fa ridisegnare tutto da solo, tramite app.js.
     } catch (e) {
       toast(e.message, 'error');
     } finally {

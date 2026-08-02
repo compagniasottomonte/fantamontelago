@@ -218,6 +218,27 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden && stato.campId && stato.sessione) ricarica();
 });
 
+/**
+ * Registra il service worker, che tiene una copia dell'app sul telefono e la
+ * rende installabile. Quando ne arriva una versione nuova la pagina si
+ * ricarica una volta sola, cosi' nessuno resta con file misti.
+ */
+function attivaCopiaLocale() {
+  if (!('serviceWorker' in navigator)) return;
+
+  let giaRicaricata = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (giaRicaricata) return;
+    giaRicaricata = true;
+    window.location.reload();
+  });
+
+  navigator.serviceWorker.register('sw.js')
+    .catch((e) => console.warn('Copia locale non attivata:', e.message));
+}
+
+attivaCopiaLocale();
+
 avvia().catch((e) => {
   app().innerHTML = `<div class="card"><h2>Avvio non riuscito</h2>
     <p class="muted">${esc(e.message)}</p></div>`;

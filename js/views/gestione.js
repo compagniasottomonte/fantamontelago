@@ -44,16 +44,27 @@ export function render() {
 
     <h2>Membri (${membri.length})</h2>
     <div class="card">
-      ${membri.map((m) => `
-        <div class="item">
-          <span class="grow">
-            <span class="name">${esc(m.nome_visualizzato || 'Senza nome')}</span>
-            <div class="muted">${m.ruolo}</div>
-          </span>
-          ${arbitro && m.user_id !== stato.utente.id
-            ? `<button class="icon danger" data-act="rimuovi-membro" data-id="${m.user_id}">Rimuovi</button>`
-            : ''}
-        </div>`).join('')}
+      ${membri.map((m) => {
+        // Il nome lo puo' correggere chi lo porta e l'arbitro: chi sbaglia a
+        // scriverlo entrando resterebbe altrimenti inchiodato a quello.
+        const modificabile = arbitro || m.user_id === stato.utente.id;
+        return `
+        <div class="item colonna">
+          <div class="row">
+            <span class="grow">
+              <span class="name">${esc(m.nome_visualizzato || 'Senza nome')}</span>
+              <div class="muted">${m.ruolo}${m.user_id === stato.utente.id ? ' · sei tu' : ''}</div>
+            </span>
+            ${arbitro && m.user_id !== stato.utente.id
+              ? `<button class="icon danger" data-act="rimuovi-membro" data-id="${m.user_id}">Rimuovi</button>`
+              : ''}
+          </div>
+          ${modificabile ? `
+            <input class="titolo-campo" maxlength="40" placeholder="Come si chiama nel gruppo"
+                   value="${esc(m.nome_visualizzato || '')}"
+                   data-campo="nome-membro" data-id="${m.id}">` : ''}
+        </div>`;
+      }).join('')}
     </div>
 
     <h2>Account</h2>
@@ -571,6 +582,20 @@ export function collegaCampi() {
       try {
         await api.aggiornaRegola(regola.dataset.id, { punti: valore });
         await bus.ricarica();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+      return;
+    }
+
+    const nomeMembro = ev.target.closest('[data-campo="nome-membro"]');
+    if (nomeMembro) {
+      const nome = nomeMembro.value.trim();
+      if (!nome) return toast('Il nome non può restare vuoto', 'error');
+      try {
+        await api.aggiornaNomeMembro(nomeMembro.dataset.id, nome);
+        await bus.ricarica();
+        toast('Nome aggiornato');
       } catch (e) {
         toast(e.message, 'error');
       }
