@@ -90,13 +90,41 @@ export async function inviaMagicLink(email, nome) {
  * usando Fanta Montelago, e l'accesso finisce li' invece che qui. Col codice
  * si resta nella stessa scheda e il problema non esiste.
  */
-export async function verificaCodice(email, codice) {
+export async function verificaCodice(email, valore) {
+  const testo = String(valore || '').trim();
+  const daLink = tokenDaLink(testo);
+
+  // Incollando il link si entra comunque nel browser giusto, anche se la mail
+  // non contiene il codice a sei cifre: basta copiare l'indirizzo invece di
+  // toccarlo, e l'accesso si crea qui e non nella finestra della posta.
+  if (daLink) {
+    const { error } = await client().auth.verifyOtp(daLink);
+    esplodi(error);
+    return;
+  }
+
   const { error } = await client().auth.verifyOtp({
     email: email.trim(),
-    token: codice.trim(),
+    token: testo,
     type: 'email',
   });
   esplodi(error);
+}
+
+/** Riconosce un link di accesso incollato e ne ricava il codice interno. */
+function tokenDaLink(testo) {
+  if (!/^https?:\/\//i.test(testo)) return null;
+  try {
+    const indirizzo = new URL(testo);
+    const parametri = new URLSearchParams(
+      indirizzo.search + '&' + indirizzo.hash.replace(/^#/, ''),
+    );
+    const token = parametri.get('token_hash') || parametri.get('token');
+    if (!token) return null;
+    return { token_hash: token, type: parametri.get('type') || 'email' };
+  } catch {
+    return null;
+  }
 }
 
 export async function esci() {

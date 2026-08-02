@@ -57,16 +57,21 @@ export function renderLogin() {
 
       <div class="card">
         <div class="field">
-          <label for="codiceAccesso">Codice ricevuto</label>
-          <input id="codiceAccesso" inputmode="numeric" autocomplete="one-time-code"
-                 maxlength="8" placeholder="000000"
-                 style="text-align:center;letter-spacing:.3em;font-size:1.6rem">
+          <label for="codiceAccesso">Codice, oppure il link incollato</label>
+          <textarea id="codiceAccesso" rows="2" autocomplete="one-time-code"
+                    placeholder="000000"
+                    style="text-align:center;font-size:1.1rem"></textarea>
         </div>
         <button class="primary block" data-act="verifica-codice">Entra</button>
         <p class="muted mt">
-          Nella stessa mail c'è anche un link, ma <b>conviene digitare il codice
-          qui</b>: toccando il link dall'app della posta si apre spesso un
-          browser diverso da questo, e l'accesso finisce lì invece che qui.
+          <b>Non toccare il link nella mail</b>: si apre spesso in un browser
+          diverso da questo, e l'accesso finisce lì invece che qui — è il motivo
+          per cui poi ti ritrovi fuori.
+        </p>
+        <p class="muted">
+          Se nella mail c'è un codice, scrivilo qui. Se c'è solo un pulsante,
+          <b>tienilo premuto e scegli «copia indirizzo link»</b>, poi incolla
+          qui: funziona uguale.
         </p>
       </div>
 
@@ -173,7 +178,9 @@ export const azioni = {
 
   async 'verifica-codice'() {
     const codice = val('codiceAccesso');
-    if (codice.length < 6) return toast('Il codice ha sei cifre', 'error');
+    if (codice.length < 6) {
+      return toast('Scrivi il codice della mail, o incollaci il link', 'error');
+    }
 
     occupato(true, 'Verifico...');
     try {
