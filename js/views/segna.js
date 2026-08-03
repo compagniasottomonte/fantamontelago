@@ -7,12 +7,12 @@
 
 import * as api from '../api.js';
 import { esc, punti, toast, occupato, urlSicuro } from '../ui.js';
-import { stato, bus, stagioneChiusa } from '../stato.js';
+import { stato, bus, stagioneChiusa, regoleAttive } from '../stato.js';
 
 let fotoScelta = null;
 
 export function render() {
-  const { personaggi, regole, arbitro } = stato.dati;
+  const { personaggi, arbitro } = stato.dati;
 
   if (stagioneChiusa()) {
     return `<div class="empty">
@@ -22,7 +22,7 @@ export function render() {
     </div>`;
   }
 
-  if (!personaggi.length || !regole.length) {
+  if (!personaggi.length || !regoleAttive().length) {
     return `<div class="empty">
       <p>Per segnare servono almeno un personaggio e una regola.</p>
       ${arbitro ? '<p>Vai su <b>Gestione</b> per aggiungerli.</p>'
@@ -30,7 +30,7 @@ export function render() {
     </div>`;
   }
 
-  const attive = regole.filter((r) => r.attiva);
+  const attive = regoleAttive();
   const opzioniRegole = (lista) => lista
     .map((r) => `<option value="${r.id}">${esc(r.nome)} (${r.punti > 0 ? '+' : ''}${r.punti})</option>`)
     .join('');

@@ -135,3 +135,22 @@ export function membroDaId(id) {
 export function proposteInAttesa() {
   return (stato.dati?.eventi || []).filter((e) => e.stato === 'proposto');
 }
+
+/** Le regole in vigore: approvate dall'arbitro e non spente. */
+export function regoleAttive() {
+  return (stato.dati?.regole || []).filter((r) => r.stato === 'approvata' && r.attiva);
+}
+
+/** Le regole approvate, spente comprese: e' l'elenco che l'arbitro gestisce. */
+export function regoleApprovate() {
+  return (stato.dati?.regole || []).filter((r) => r.stato === 'approvata');
+}
+
+export function regoleProposte() {
+  return (stato.dati?.regole || []).filter((r) => r.stato === 'proposta');
+}
+
+/** Quante cose aspettano un giudizio, per il contatore sulla scheda Proposte. */
+export function totaleInAttesa() {
+  return proposteInAttesa().length + regoleProposte().length;
+}

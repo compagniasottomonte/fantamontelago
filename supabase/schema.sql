@@ -86,6 +86,18 @@ alter table public.regole add column if not exists protetta boolean not null def
 alter table public.personaggi add column if not exists titolo text not null default '';
 alter table public.accampamenti add column if not exists chiude_il timestamptz;
 alter table public.accampamenti add column if not exists chiusa_il timestamptz;
+alter table public.regole add column if not exists stato text not null default 'approvata';
+alter table public.regole add column if not exists proposta_da uuid references auth.users(id) on delete set null;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'regole_stato_valido') then
+    alter table public.regole add constraint regole_stato_valido
+      check (stato in ('proposta', 'approvata', 'rifiutata'));
+  end if;
+end $$;
+
+create index if not exists regole_stato_idx on public.regole (accampamento_id, stato);
 
 create index if not exists eventi_accampamento_idx on public.eventi (accampamento_id, stato);
 create index if not exists eventi_personaggio_idx  on public.eventi (personaggio_id);
@@ -237,6 +249,34 @@ begin
   return new;
 end $$;
 
+-- Anche le regole si possono proporre: chi non arbitra scrive la sua idea e
+-- l'arbitro decide se entra in gioco. Come per gli eventi, e' il database a
+-- imporre che una proposta nasca tale, non l'interfaccia.
+create or replace function public.forza_stato_regola()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.stagione_chiusa(new.accampamento_id) then
+    raise exception 'La stagione è chiusa: il regolamento non si tocca più';
+  end if;
+
+  new.proposta_da := coalesce(new.proposta_da, auth.uid());
+
+  if not public.is_arbitro(new.accampamento_id) then
+    new.stato := 'proposta';
+    new.attiva := true;
+    new.protetta := false;
+  else
+    new.stato := coalesce(nullif(new.stato, 'proposta'), 'approvata');
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists trg_forza_stato_regola on public.regole;
+create trigger trg_forza_stato_regola
+  before insert on public.regole
+  for each row execute function public.forza_stato_regola();
+
 drop trigger if exists trg_forza_stato_evento on public.eventi;
 create trigger trg_forza_stato_evento
   before insert or update on public.eventi
@@ -310,10 +350,12 @@ create policy reg_select on public.regole
 -- continuano quindi a funzionare senza eccezioni particolari.
 drop policy if exists reg_write on public.regole;
 
+-- Proporre una regola lo puo' fare qualunque membro; il trigger si occupa di
+-- farla nascere come proposta se chi scrive non arbitra.
 drop policy if exists reg_insert on public.regole;
 create policy reg_insert on public.regole
   for insert to authenticated
-  with check (public.is_arbitro(accampamento_id) and not protetta);
+  with check (public.is_membro(accampamento_id) and not protetta);
 
 drop policy if exists reg_update on public.regole;
 create policy reg_update on public.regole
@@ -321,10 +363,13 @@ create policy reg_update on public.regole
   using (public.is_arbitro(accampamento_id) and not protetta)
   with check (public.is_arbitro(accampamento_id) and not protetta);
 
+-- Chi ha proposto una regola puo' ritirarla finche' nessuno l'ha giudicata.
 drop policy if exists reg_delete on public.regole;
 create policy reg_delete on public.regole
   for delete to authenticated
-  using (public.is_arbitro(accampamento_id) and not protetta);
+  using (not protetta
+         and (public.is_arbitro(accampamento_id)
+              or (proposta_da = auth.uid() and stato = 'proposta')));
 
 -- --- eventi ---
 drop policy if exists evt_select on public.eventi;

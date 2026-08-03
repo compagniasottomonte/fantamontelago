@@ -8,11 +8,12 @@
 import * as api from '../api.js';
 import { esc, punti, toast, occupato, conferma, iniziali, dataOra, perCampoData } from '../ui.js';
 import { stato, bus, ricordaCamp, puntiDi, mioPersonaggio, membroDaId,
-         titoloDi, titoloCalcolatoDi, stagioneChiusa, proposteInAttesa } from '../stato.js';
+         titoloDi, titoloCalcolatoDi, stagioneChiusa, proposteInAttesa,
+         regoleAttive, regoleApprovate, regoleProposte } from '../stato.js';
 import { crediti } from './info.js';
 
 export function render() {
-  const { accampamento: a, personaggi, regole, membri, arbitro } = stato.dati;
+  const { accampamento: a, personaggi, membri, arbitro } = stato.dati;
 
   return `
     <div class="card">
@@ -40,7 +41,7 @@ export function render() {
     ${sezioneChiSei(personaggi)}
     ${sezionePremio(a, arbitro)}
     ${arbitro ? sezionePersonaggi(personaggi) : elencoPersonaggi(personaggi)}
-    ${arbitro ? sezioneRegole(regole) : elencoRegole(regole)}
+    ${arbitro ? sezioneRegole() : elencoRegole()}
 
     <h2>Membri (${membri.length})</h2>
     <div class="card">
@@ -299,8 +300,11 @@ function sezionePersonaggi(personaggi) {
  * scrive da se', quindi senza questo elenco un giocatore potrebbe conoscerlo
  * solo scorrendo il menu a tendina mentre segna.
  */
-function elencoRegole(regole) {
-  const attive = regole.filter((r) => r.attiva);
+function elencoRegole() {
+  const attive = regoleAttive();
+  const mieProposte = regoleProposte().filter((r) => r.proposta_da === stato.utente.id);
+  const chiusa = stagioneChiusa();
+
   const riga = (r) => `
     <div class="item">
       <span class="grow">${esc(r.nome)}${r.protetta ? ' 🔒' : ''}</span>
@@ -323,10 +327,42 @@ function elencoRegole(regole) {
       <p class="muted mt">
         Le regole le decide l'arbitro: ogni accampamento ha le sue.
       </p>
-    </details>`;
+    </details>
+
+    ${chiusa ? '' : `
+      <div class="card">
+        <h3>Proponi una regola</h3>
+        <p class="muted">
+          Se al campo salta fuori qualcosa che merita punti, scrivila qui:
+          finisce all'arbitro, che decide se adottarla.
+        </p>
+        <div class="field">
+          <label for="rNome">Descrizione</label>
+          <input id="rNome" placeholder="es. Si addormenta in piedi">
+        </div>
+        <div class="field">
+          <label for="rPunti">Punti (negativi per un malus)</label>
+          <input id="rPunti" type="number" value="5">
+        </div>
+        <button class="primary block" data-act="add-regola">Proponi la regola</button>
+      </div>`}
+
+    ${mieProposte.length ? `
+      <div class="card">
+        <h3>Le tue proposte in attesa</h3>
+        ${mieProposte.map((r) => `
+          <div class="item">
+            <span class="grow">${esc(r.nome)}</span>
+            ${punti(r.punti)}
+          </div>`).join('')}
+        <p class="muted mt">Dalla scheda Proposte puoi ritirarle finché l'arbitro non decide.</p>
+      </div>` : ''}`;
 }
 
-function sezioneRegole(regole) {
+function sezioneRegole() {
+  const regole = regoleApprovate();
+  const inArrivo = regoleProposte().length;
+
   // Le regole di bandiera si mostrano con il lucchetto invece dei comandi:
   // il database le rifiuterebbe comunque, ma un pulsante che non fa niente
   // sembrerebbe un guasto.
@@ -350,6 +386,11 @@ function sezioneRegole(regole) {
 
   return `
     <h2>Bonus e malus (${regole.length})</h2>
+    ${inArrivo ? `
+      <div class="banner ok">
+        ✋ ${inArrivo} regol${inArrivo === 1 ? 'a proposta' : 'e proposte'} dal gruppo:
+        le giudichi dalla scheda <b>Proposte</b>.
+      </div>` : ''}
     <div class="card">
       <div class="field">
         <label for="rNome">Descrizione</label>
@@ -498,7 +539,14 @@ export const azioni = {
     const p = Number(val('rPunti'));
     if (!nome) return toast('Serve una descrizione', 'error');
     if (!Number.isInteger(p) || p === 0) return toast('I punti devono essere un numero diverso da zero', 'error');
-    return conRicarica('Aggiungo...', () => api.aggiungiRegola(stato.campId, nome, p), 'Regola aggiunta');
+    // Chi non arbitra puo' scriverla lo stesso: e' il database a farla nascere
+    // come proposta, e il messaggio deve dirlo chiaramente.
+    const arbitro = stato.dati.arbitro;
+    return conRicarica(
+      arbitro ? 'Aggiungo...' : 'Invio la proposta...',
+      () => api.aggiungiRegola(stato.campId, nome, p),
+      arbitro ? 'Regola aggiunta' : 'Proposta inviata all\'arbitro',
+    );
   },
 
   'toggle-regola'(id) {

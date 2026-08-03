@@ -8,7 +8,7 @@
 import * as api from './api.js';
 import { leggiConfig } from './config.js';
 import { esc, toast, occupato } from './ui.js';
-import { stato, bus, campRicordato, ricordaCamp, proposteInAttesa } from './stato.js';
+import { stato, bus, campRicordato, ricordaCamp, totaleInAttesa } from './stato.js';
 
 import * as vAuth from './views/auth.js';
 import * as vAccampamenti from './views/accampamenti.js';
@@ -71,7 +71,7 @@ function intestazione(titolo, sottotitolo) {
 }
 
 function navigazione() {
-  const attesa = proposteInAttesa().length;
+  const attesa = totaleInAttesa();
   const arbitro = stato.dati?.arbitro;
 
   document.getElementById('nav').innerHTML = SCHEDE.map((s) => {
