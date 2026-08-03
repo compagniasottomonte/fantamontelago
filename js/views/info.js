@@ -66,9 +66,9 @@ const PASSI_INSTALLAZIONE = [
   },
   {
     figura: '2-menu.jpg',
-    titolo: 'Scorri il menu fino in fondo',
-    testo: 'È più lungo dello schermo: scendi finché non trovi '
-         + '<b>«Aggiungi a schermata Home»</b>.',
+    titolo: 'Scendi fino a «Installa e crea scorciatoia»',
+    testo: 'Il menu è più lungo dello schermo: la voce non si vede subito, '
+         + 'bisogna scorrerlo. Su qualche telefono è scritta di poco diversa.',
   },
   {
     figura: '3-installa.jpg',
@@ -79,13 +79,9 @@ const PASSI_INSTALLAZIONE = [
   {
     figura: '4-conferma.jpg',
     titolo: 'Conferma',
-    testo: 'Tocca <b>Installa</b> nella finestrella che compare.',
-  },
-  {
-    figura: '5-icona.jpg',
-    titolo: 'Fatto',
-    testo: 'L\'icona è fra le tue app. Da lì Fanta Montelago si apre a schermo '
-         + 'intero e <b>si avvia anche senza campo</b>.',
+    testo: 'Tocca <b>Installa</b> nella finestrella che compare. '
+         + 'L\'icona finisce fra le tue app, e da lì si apre a schermo intero '
+         + 'e <b>anche senza campo</b>.',
   },
 ];
 
