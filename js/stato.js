@@ -136,18 +136,30 @@ export function proposteInAttesa() {
   return (stato.dati?.eventi || []).filter((e) => e.stato === 'proposto');
 }
 
+/**
+ * Lo stato di una regola, tollerante verso i database non ancora aggiornati.
+ *
+ * Il codice viene pubblicato prima che l'arbitro esegua la migrazione, e in
+ * quella finestra la colonna "stato" non esiste ancora: senza questo
+ * ripiego nessuna regola risulterebbe valida e non si potrebbe piu' segnare.
+ * Una regola che c'era prima della novita' e' per definizione gia' approvata.
+ */
+function statoRegola(regola) {
+  return regola.stato || 'approvata';
+}
+
 /** Le regole in vigore: approvate dall'arbitro e non spente. */
 export function regoleAttive() {
-  return (stato.dati?.regole || []).filter((r) => r.stato === 'approvata' && r.attiva);
+  return (stato.dati?.regole || []).filter((r) => statoRegola(r) === 'approvata' && r.attiva);
 }
 
 /** Le regole approvate, spente comprese: e' l'elenco che l'arbitro gestisce. */
 export function regoleApprovate() {
-  return (stato.dati?.regole || []).filter((r) => r.stato === 'approvata');
+  return (stato.dati?.regole || []).filter((r) => statoRegola(r) === 'approvata');
 }
 
 export function regoleProposte() {
-  return (stato.dati?.regole || []).filter((r) => r.stato === 'proposta');
+  return (stato.dati?.regole || []).filter((r) => statoRegola(r) === 'proposta');
 }
 
 /** Quante cose aspettano un giudizio, per il contatore sulla scheda Proposte. */
