@@ -110,14 +110,11 @@ presente).
 Lo schema è stato eseguito per intero sul progetto Supabase: premio, bandiera,
 titoli, riconoscimento in classifica, chiusura di stagione e proposte di regole
 funzionano dal vivo. I due modelli di mail (*Magic Link* e *Confirm signup*)
-sono stati adattati e contengono il codice a sei cifre.
+sono stati adattati e contengono il codice a sei cifre. L'**SMTP** è stato
+collegato: le email non passano più dal servizio incluso in Supabase.
 
 ## Cosa resta aperto
 
-- **SMTP con Gmail su Supabase.** Il servizio email incluso manda pochissimi
-  messaggi all'ora: regge le prove, non regge venti persone che entrano insieme.
-  È il rischio più concreto per il festival, e l'unica cosa importante rimasta.
-  Daniele lo ha rimandato consapevolmente.
 - **Poster dell'accampamento con le tende**: i nomi sulle tende, la bandiera, i
   punteggi. Idea originale di Daniele, mai realizzata.
 - **Guida illustrata per iPhone**: le istruzioni iOS sono a parole, servirebbe
