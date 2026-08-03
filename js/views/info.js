@@ -53,6 +53,66 @@ export function piePagina() {
     </p>`;
 }
 
+/**
+ * I cinque passaggi per installare l'app da Chrome, ricavati dalla
+ * registrazione fatta al telefono. Le immagini stanno dentro un pannello
+ * chiuso: cosi' le scarica solo chi lo apre, e non pesano su tutti gli altri.
+ */
+const PASSI_INSTALLAZIONE = [
+  {
+    figura: '1-apri.jpg',
+    titolo: 'Apri il sito in Chrome',
+    testo: 'Poi tocca i <b>tre puntini</b> in alto a destra.',
+  },
+  {
+    figura: '2-menu.jpg',
+    titolo: 'Scorri il menu fino in fondo',
+    testo: 'È più lungo dello schermo: scendi finché non trovi '
+         + '<b>«Aggiungi a schermata Home»</b>.',
+  },
+  {
+    figura: '3-installa.jpg',
+    titolo: 'Scegli «Installa»',
+    testo: '<b>Non «Crea scorciatoia»</b>: quella si aprirebbe comunque dentro '
+         + 'Chrome, con la barra dell\'indirizzo e senza funzionare offline.',
+  },
+  {
+    figura: '4-conferma.jpg',
+    titolo: 'Conferma',
+    testo: 'Tocca <b>Installa</b> nella finestrella che compare.',
+  },
+  {
+    figura: '5-icona.jpg',
+    titolo: 'Fatto',
+    testo: 'L\'icona è fra le tue app. Da lì Fanta Montelago si apre a schermo '
+         + 'intero e <b>si avvia anche senza campo</b>.',
+  },
+];
+
+export function guidaInstallazione() {
+  return `
+    <details class="card">
+      <summary class="tasto">📱 Come installare l'app da Chrome</summary>
+      <div class="sep"></div>
+      <p class="muted">
+        Installandola hai l'icona fra le applicazioni, niente barra del browser
+        e l'apertura anche senza connessione — che a Montelago non è poco.
+      </p>
+      ${PASSI_INSTALLAZIONE.map((p, i) => `
+        <div class="passo-installa">
+          <div class="riga">
+            <span class="n">${i + 1}</span>
+            <span class="grow">
+              <b>${p.titolo}</b>
+              <div class="muted">${p.testo}</div>
+            </span>
+          </div>
+          <img src="assets/installa/${p.figura}" alt="${p.titolo}"
+               loading="lazy" width="432" height="960">
+        </div>`).join('')}
+    </details>`;
+}
+
 /** Presentazione, avvertenza sulla connessione e crediti. */
 export function introduzione() {
   return `
@@ -73,6 +133,8 @@ export function introduzione() {
       </p>
       <a class="link-guida" href="guida.html">📖 Guida: come si gioca</a>
     </div>
+
+    ${guidaInstallazione()}
 
     ${nonUfficiale()}
 
