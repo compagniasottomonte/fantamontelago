@@ -85,15 +85,41 @@ const PASSI_INSTALLAZIONE = [
   },
 ];
 
+/**
+ * Su iPhone il percorso e' un altro: non c'e' il menu a tre puntini, si passa
+ * dal tasto Condividi, e nessun avviso automatico suggerisce l'installazione.
+ * Senza queste righe meta' del gruppo resterebbe col sito dentro il browser.
+ */
+function passiIphone() {
+  return `
+    <div class="sep"></div>
+    <h3>🍎 Su iPhone è diverso</h3>
+    <p class="muted">
+      Niente tre puntini: si passa dal tasto <b>Condividi</b>, il quadrato con
+      la freccia verso l'alto. Funziona da <b>Safari</b>, e da iOS 17 anche da
+      Chrome — ma sempre dal tasto Condividi, non dal menu.
+    </p>
+    <ol class="elenco-iphone">
+      <li>Apri il link in <b>Safari</b>.</li>
+      <li>Tocca <b>Condividi</b> (il quadrato con la freccia in su, in basso al centro).</li>
+      <li>Scorri l'elenco e scegli <b>«Aggiungi a Home»</b>, poi <b>Aggiungi</b>.</li>
+    </ol>
+    <p class="muted">
+      Su iPhone non compare nessun invito automatico a installare: se non lo
+      fai a mano, resta un sito dentro il browser.
+    </p>`;
+}
+
 export function guidaInstallazione() {
   return `
     <details class="card">
-      <summary class="tasto">📱 Come installare l'app da Chrome</summary>
+      <summary class="tasto">📱 Come installare l'app sul telefono</summary>
       <div class="sep"></div>
       <p class="muted">
         Installandola hai l'icona fra le applicazioni, niente barra del browser
         e l'apertura anche senza connessione — che a Montelago non è poco.
       </p>
+      <h3>🤖 Su Android, con Chrome</h3>
       ${PASSI_INSTALLAZIONE.map((p, i) => `
         <div class="passo-installa">
           <div class="riga">
@@ -106,6 +132,7 @@ export function guidaInstallazione() {
           <img src="assets/installa/${p.figura}" alt="${p.titolo}"
                loading="lazy" width="432" height="960">
         </div>`).join('')}
+      ${passiIphone()}
     </details>`;
 }
 

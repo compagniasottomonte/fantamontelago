@@ -129,6 +129,9 @@ main { max-width: 820px; margin: 0 auto; padding: 16px; }
 }
 .link-guida { margin: 12px 0 4px; }
 
+.elenco-iphone { margin: 10px 0 10px 22px; padding: 0; color: var(--txt); }
+.elenco-iphone li { margin-bottom: 8px; font-size: .92rem; }
+
 /* Un passaggio della guida all'installazione: numero, spiegazione, schermata. */
 .passo-installa { padding: 14px 0; border-bottom: 1px solid var(--line); }
 .passo-installa:last-child { border-bottom: none; }
