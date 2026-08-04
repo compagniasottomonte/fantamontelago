@@ -82,6 +82,67 @@ function inRighe(ctx, testo, largMax, maxRighe) {
   return righe;
 }
 
+/** Velo scuro: senza, il testo chiaro sparirebbe su una foto luminosa. */
+function stendiVelo(ctx, opacita = 1) {
+  const velo = ctx.createLinearGradient(0, 0, 0, ALT);
+  velo.addColorStop(0, `rgba(8,18,12,${0.72 * opacita})`);
+  velo.addColorStop(0.35, `rgba(8,18,12,${0.28 * opacita})`);
+  velo.addColorStop(0.62, `rgba(8,18,12,${0.80 * opacita})`);
+  velo.addColorStop(1, `rgba(8,18,12,${0.97 * opacita})`);
+  ctx.fillStyle = velo;
+  ctx.fillRect(0, 0, LARG, ALT);
+}
+
+/**
+ * Lo sfondo della card a partire dalla foto-prova.
+ *
+ * Una foto verticale riempie il formato e si lascia a tutto schermo. Una
+ * orizzontale invece, ritagliata per riempire, perderebbe i due terzi della
+ * scena: quasi sempre proprio le persone ai lati. In quel caso si mette la
+ * foto intera al centro e dietro la stessa foto sfocata a riempire il vuoto,
+ * cosi' niente viene tagliato e il formato resta verticale.
+ */
+function disegnaFondoConFoto(ctx, foto) {
+  const rapportoCard = LARG / ALT;
+  const rapportoFoto = foto.width / foto.height;
+
+  // Quanta parte della foto sparirebbe riempiendo il formato. Si decide su
+  // questo e non sulle proporzioni: un 3:4, che e' lo scatto piu' comune da
+  // telefono, perderebbe un quarto della larghezza, cioe' le persone ai bordi.
+  const ritaglio = rapportoFoto > rapportoCard
+    ? 1 - rapportoCard / rapportoFoto
+    : 1 - rapportoFoto / rapportoCard;
+
+  if (ritaglio <= 0.18) {
+    disegnaCoprendo(ctx, foto, 0, 0, LARG, ALT);
+    stendiVelo(ctx);
+    return;
+  }
+
+  // Sfondo sfocato, debordante per non lasciare bordi chiari ai lati.
+  ctx.save();
+  if ('filter' in ctx) ctx.filter = 'blur(44px)';
+  disegnaCoprendo(ctx, foto, -60, -60, LARG + 120, ALT + 120);
+  ctx.restore();
+  stendiVelo(ctx, 0.85);
+
+  // La foto intera, dentro la fascia libera fra intestazione e verdetto.
+  const zona = { x: 60, y: 300, l: LARG - 120, a: 830 };
+  const scala = Math.min(zona.l / foto.width, zona.a / foto.height);
+  const l = foto.width * scala, a = foto.height * scala;
+  const x = zona.x + (zona.l - l) / 2, y = zona.y + (zona.a - a) / 2;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.55)';
+  ctx.shadowBlur = 34;
+  ctx.drawImage(foto, x, y, l, a);
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(217,164,65,.55)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, l, a);
+}
+
 /** Sfondo di ripiego quando l'evento non ha una foto. */
 function sfondoDecorativo(ctx) {
   const g = ctx.createLinearGradient(0, 0, LARG, ALT);
@@ -112,20 +173,8 @@ export async function cardEvento({ evento, personaggio, accampamento, titolo, ur
 
   const foto = await immagine(urlFoto);
 
-  // --- sfondo ---
-  if (foto) {
-    disegnaCoprendo(ctx, foto, 0, 0, LARG, ALT);
-    // Velo scuro: senza, il testo bianco sparirebbe su una foto chiara.
-    const velo = ctx.createLinearGradient(0, 0, 0, ALT);
-    velo.addColorStop(0, 'rgba(8,18,12,.72)');
-    velo.addColorStop(0.35, 'rgba(8,18,12,.28)');
-    velo.addColorStop(0.62, 'rgba(8,18,12,.80)');
-    velo.addColorStop(1, 'rgba(8,18,12,.97)');
-    ctx.fillStyle = velo;
-    ctx.fillRect(0, 0, LARG, ALT);
-  } else {
-    sfondoDecorativo(ctx);
-  }
+  if (foto) disegnaFondoConFoto(ctx, foto);
+  else sfondoDecorativo(ctx);
 
   // --- cornice ---
   ctx.strokeStyle = COLORI.oro;
