@@ -56,17 +56,60 @@ export function occupato(attivo, testo = 'Un attimo...') {
   el.classList.toggle('show', attivo);
 }
 
+/**
+ * Decodifica un file immagine, con un ripiego.
+ *
+ * createImageBitmap e' la strada veloce ma su certe foto di fotocamera fallisce
+ * con "The source image could not be decoded", pur essendo immagini che il
+ * browser mostra senza problemi. In quel caso si passa dal decodificatore
+ * classico: e' lo stesso che ha gia' disegnato l'anteprima, quindi con quella
+ * foto funziona di sicuro.
+ */
+async function decodifica(file) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    return { sorgente: bitmap, larghezza: bitmap.width, altezza: bitmap.height,
+             chiudi: () => bitmap.close?.() };
+  } catch {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = url;
+    try {
+      await img.decode();
+    } catch {
+      URL.revokeObjectURL(url);
+      throw new Error('Non riesco a leggere questa immagine: provane un\'altra, '
+                    + 'o rifalla con la fotocamera.');
+    }
+    return {
+      sorgente: img,
+      larghezza: img.naturalWidth,
+      altezza: img.naturalHeight,
+      chiudi: () => URL.revokeObjectURL(url),
+    };
+  }
+}
+
 /** Ridisegna un file immagine su una tela piu' piccola, mantenendo le proporzioni. */
 async function riduci(file, latoMax) {
-  if (!file.type.startsWith('image/')) throw new Error('Il file non e\' un\'immagine');
+  // Alcune gallerie Android consegnano il file senza dichiararne il tipo:
+  // rifiutarlo a priori escluderebbe foto perfettamente valide.
+  if (file.type && !file.type.startsWith('image/')) {
+    throw new Error('Il file non e\' un\'immagine');
+  }
 
-  const bitmap = await createImageBitmap(file);
-  const scala = Math.min(1, latoMax / Math.max(bitmap.width, bitmap.height));
+  const { sorgente, larghezza, altezza, chiudi } = await decodifica(file);
+  if (!larghezza || !altezza) {
+    chiudi();
+    throw new Error('Immagine vuota o illeggibile');
+  }
+
+  const scala = Math.min(1, latoMax / Math.max(larghezza, altezza));
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(bitmap.width * scala);
-  canvas.height = Math.round(bitmap.height * scala);
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close?.();
+  canvas.width = Math.round(larghezza * scala);
+  canvas.height = Math.round(altezza * scala);
+  canvas.getContext('2d').drawImage(sorgente, 0, 0, canvas.width, canvas.height);
+  chiudi();
   return canvas;
 }
 
