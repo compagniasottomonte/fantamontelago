@@ -22,6 +22,30 @@ export function client() {
   return sb;
 }
 
+/**
+ * Errore causato dall'assenza di linea, riconoscibile da chi lo riceve.
+ *
+ * La differenza conta piu' del messaggio: se e' mancato il campo non si e'
+ * perso niente e si riprovera', se invece e' stato il database a dire di no
+ * riprovare all'infinito non servirebbe a nulla.
+ */
+function erroreDiRete(messaggio) {
+  const errore = new Error(messaggio);
+  errore.rete = true;
+  return errore;
+}
+
+/**
+ * Vero se il motivo del fallimento e' la mancanza di connessione.
+ * Il browser che si dichiara offline basta da solo: quando lo dice, ci si
+ * puo' fidare.
+ */
+export function senzaRete(errore) {
+  if (!navigator.onLine) return true;
+  if (errore?.rete) return true;
+  return /Failed to fetch|NetworkError|Load failed|network ?error/i.test(errore?.message || '');
+}
+
 /** Trasforma l'errore Postgres in un messaggio leggibile in italiano. */
 function esplodi(errore) {
   if (!errore) return;
@@ -44,8 +68,8 @@ function esplodi(errore) {
   if (/Email not confirmed/i.test(m)) {
     throw new Error('Devi prima aprire il link di conferma che ti è arrivato per email');
   }
-  if (/Failed to fetch|NetworkError/i.test(m)) {
-    throw new Error('Nessuna connessione. Riprova quando ti torna la linea.');
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) {
+    throw erroreDiRete('Nessuna connessione. Riprova quando ti torna la linea.');
   }
   if (m.includes('row-level security')) {
     throw new Error('Non hai i permessi per questa operazione');
@@ -60,9 +84,18 @@ function esplodi(errore) {
 // Autenticazione
 // ------------------------------------------------------------------
 
+/**
+ * Senza linea il rinnovo del permesso non riesce e qui puo' arrivare un
+ * errore invece di una sessione: non e' un motivo per non far partire l'app,
+ * ci pensa app.js a rimettersi in piedi con l'utente ricordato.
+ */
 export async function sessione() {
-  const { data } = await client().auth.getSession();
-  return data.session;
+  try {
+    const { data } = await client().auth.getSession();
+    return data.session;
+  } catch {
+    return null;
+  }
 }
 
 export function alCambioSessione(callback) {
@@ -369,12 +402,17 @@ export async function eliminaRegola(id) {
  * Registra un evento. Se e' l'arbitro a segnarlo nasce gia' approvato, se e'
  * un giocatore resta in attesa: la decisione la prende il trigger sul
  * database, non questo codice, cosi' non e' aggirabile dal browser.
+ *
+ * "fotoPronta" e "creatoIl" servono a chi arriva dalla coda: la foto e' gia'
+ * stata compressa sul posto, quando c'era ancora la scena da fotografare, e
+ * l'ora da scrivere e' quella in cui il fatto e' successo, non quella in cui
+ * il telefono ha ritrovato il campo.
  */
-export async function creaEvento({ accampamentoId, personaggioId, regola, nota, giornata, videoUrl, foto }) {
+export async function creaEvento({ accampamentoId, personaggioId, regola, nota, giornata, videoUrl, foto, fotoPronta, creatoIl }) {
   let fotoPath = null;
+  const blob = fotoPronta || (foto ? await comprimiImmagine(foto) : null);
 
-  if (foto) {
-    const blob = await comprimiImmagine(foto);
+  if (blob) {
     // Il primo segmento del path e' l'id dell'accampamento: e' su quello che
     // le policy dello storage decidono chi puo' leggere il file.
     fotoPath = `${accampamentoId}/${crypto.randomUUID()}.jpg`;
@@ -383,7 +421,7 @@ export async function creaEvento({ accampamentoId, personaggioId, regola, nota, 
     esplodi(error);
   }
 
-  const { error } = await client().from('eventi').insert({
+  const riga = {
     accampamento_id: accampamentoId,
     personaggio_id: personaggioId,
     regola_id: regola.id,
@@ -393,7 +431,10 @@ export async function creaEvento({ accampamentoId, personaggioId, regola, nota, 
     giornata,
     video_url: videoUrl || null,
     foto_path: fotoPath,
-  });
+  };
+  if (creatoIl) riga.creato_il = creatoIl;
+
+  const { error } = await client().from('eventi').insert(riga);
   esplodi(error);
 }
 

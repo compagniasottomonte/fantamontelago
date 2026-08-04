@@ -6,16 +6,22 @@
 // Autore:   Daniele Polucci
 
 import * as api from '../api.js';
-import { esc, punti, toast, occupato, urlSicuro } from '../ui.js';
-import { stato, bus, stagioneChiusa, regoleAttive } from '../stato.js';
+import * as coda from '../coda.js';
+import { esc, punti, toast, occupato, urlSicuro, dataOra, comprimiImmagine } from '../ui.js';
+import { stato, bus, stagioneChiusa, regoleAttive, codaQui, nomePersonaggio } from '../stato.js';
 
 let fotoScelta = null;
 
 export function render() {
   const { personaggi, arbitro } = stato.dati;
 
+  // La coda si mostra sempre, anche quando il modulo non c'e': se la stagione
+  // si e' chiusa mentre si era senza campo, chi ha segnato deve poter vedere
+  // che fine hanno fatto le sue segnalazioni, non ritrovarsi il vuoto.
+  const attesa = riquadroCoda();
+
   if (stagioneChiusa()) {
-    return `<div class="empty">
+    return attesa + `<div class="empty">
       <p>🔒 <b>La stagione è chiusa.</b></p>
       <p>La classifica è definitiva: non si registrano più eventi.</p>
       ${arbitro ? '<p>Se serve, puoi riaprirla dalla scheda Gestione.</p>' : ''}
@@ -23,7 +29,7 @@ export function render() {
   }
 
   if (!personaggi.length || !regoleAttive().length) {
-    return `<div class="empty">
+    return attesa + `<div class="empty">
       <p>Per segnare servono almeno un personaggio e una regola.</p>
       ${arbitro ? '<p>Vai su <b>Gestione</b> per aggiungerli.</p>'
                 : '<p>Aspetta che l\'arbitro finisca di preparare l\'accampamento.</p>'}
@@ -37,7 +43,7 @@ export function render() {
 
   const oggi = new Date().toISOString().slice(0, 10);
 
-  return `
+  return attesa + `
     <div class="banner ${arbitro ? 'ok' : ''}">
       ${arbitro
         ? '⚖️ Sei l\'arbitro: quello che segni vale subito.'
@@ -104,6 +110,57 @@ export function render() {
     ${riepilogoMie()}`;
 }
 
+/**
+ * Quello che aspetta il campo per partire.
+ *
+ * Sta in cima alla schermata e non in fondo: al festival e' la prima cosa che
+ * si vuole sapere riaprendo l'app, "il malus di ieri notte e' arrivato?".
+ */
+function riquadroCoda() {
+  const attesa = codaQui();
+  if (!attesa.length) return '';
+
+  const respinte = attesa.filter((v) => v.bloccata).length;
+  const inPartenza = attesa.length - respinte;
+
+  const riga = (v) => `
+    <div class="item colonna">
+      <div class="between">
+        <span class="grow">
+          <span class="name">${esc(nomePersonaggio(v.personaggioId))}</span>
+          <div class="muted">${esc(v.regolaNome)}</div>
+        </span>
+        ${punti(v.regolaPunti)}
+      </div>
+      ${v.nota ? `<p class="nota">«${esc(v.nota)}»</p>` : ''}
+      <div class="between mt">
+        <span class="muted small">
+          ${v.foto ? '📷 ' : ''}segnato il ${esc(dataOra(v.creatoIl))}
+        </span>
+        <span class="row">
+          ${v.bloccata ? `<button class="icon" data-act="riprova-coda" data-id="${v.id}">Riprova</button>` : ''}
+          <button class="icon danger" data-act="scarta-coda" data-id="${v.id}">Scarta</button>
+        </span>
+      </div>
+      ${v.bloccata ? `<p class="muted small">❌ ${esc(v.motivo)}</p>` : ''}
+    </div>`;
+
+  return `
+    <h2>In attesa di partire</h2>
+    <div class="card ${respinte ? 'avviso' : ''}">
+      <p class="muted">${
+        inPartenza
+          ? (inPartenza === 1
+              ? 'Una segnalazione è sul telefono e partirà da sola appena c\'è campo.'
+              : `${inPartenza} segnalazioni sono sul telefono e partiranno da sole appena c'è campo.`)
+          : ''}
+        ${respinte ? `${respinte === 1 ? 'Una è stata respinta' : `${respinte} sono state respinte`} dal database: decidi tu cosa farne.` : ''}
+      </p>
+      ${attesa.map(riga).join('')}
+      ${inPartenza ? '<button class="primary block mt" data-act="invia-coda">Prova a inviarle adesso</button>' : ''}
+    </div>`;
+}
+
 /** Per un giocatore normale e' utile vedere che fine hanno fatto le sue proposte. */
 function riepilogoMie() {
   const mie = (stato.dati.eventi || [])
@@ -148,27 +205,82 @@ export const azioni = {
     const videoUrl = urlSicuro(videoGrezzo);
     if (videoGrezzo && !videoUrl) return toast('Il link del video non è valido', 'error');
 
+    const bozza = {
+      accampamentoId: stato.campId,
+      personaggioId,
+      regola,
+      nota: val('nota'),
+      giornata: val('giornata') || new Date().toISOString().slice(0, 10),
+      videoUrl,
+      foto: fotoScelta,
+    };
+
+    // Se il browser sa gia' di essere senza linea si va dritti in coda: fare
+    // un tentativo destinato a fallire vorrebbe dire far aspettare qualcuno
+    // in mezzo a un prato per niente.
+    if (!navigator.onLine) return mettiInCoda(bozza);
+
     occupato(true, fotoScelta ? 'Carico la foto...' : 'Registro...');
     try {
-      await api.creaEvento({
-        accampamentoId: stato.campId,
-        personaggioId,
-        regola,
-        nota: val('nota'),
-        giornata: val('giornata') || new Date().toISOString().slice(0, 10),
-        videoUrl,
-        foto: fotoScelta,
-      });
+      await api.creaEvento(bozza);
       fotoScelta = null;
       await bus.ricarica();
       toast(stato.dati.arbitro ? 'Punti assegnati' : 'Segnalazione inviata');
     } catch (e) {
+      // Il campo puo' cadere a meta' invio: in quel caso non si perde niente,
+      // l'evento passa in coda come se fosse stato segnato da fermi.
+      if (api.senzaRete(e)) {
+        occupato(false);
+        return mettiInCoda(bozza);
+      }
       toast(e.message, 'error');
     } finally {
       occupato(false);
     }
   },
 };
+
+/**
+ * Mette da parte una segnalazione che non e' potuta partire.
+ *
+ * La foto si comprime adesso, non alla spedizione: qui e' ancora un file che
+ * il browser ha in mano, e ridurla subito significa tenere in archivio
+ * duecento chili di byte invece dei quattro mega dell'originale. Al festival,
+ * con la coda che si allunga per ore, e' la differenza fra starci e no.
+ */
+async function mettiInCoda(bozza) {
+  occupato(true, bozza.foto ? 'Preparo la foto...' : 'Metto in coda...');
+  try {
+    let foto = null;
+    if (bozza.foto) {
+      // Se la compressione non riesce si tiene l'originale: pesa, ma una
+      // segnalazione pesante e' sempre meglio di una segnalazione persa.
+      foto = await comprimiImmagine(bozza.foto).catch(() => bozza.foto);
+    }
+
+    await coda.accoda({
+      accampamentoId: bozza.accampamentoId,
+      personaggioId: bozza.personaggioId,
+      regolaId: bozza.regola.id,
+      regolaNome: bozza.regola.nome,
+      regolaPunti: bozza.regola.punti,
+      nota: bozza.nota,
+      giornata: bozza.giornata,
+      videoUrl: bozza.videoUrl,
+      foto,
+      creatoIl: new Date().toISOString(),
+    });
+
+    fotoScelta = null;
+    await bus.ricaricaCoda();
+    bus.disegna();
+    toast('Senza linea: la mando appena torna il campo');
+  } catch (e) {
+    toast(e.message || 'Non sono riuscito a mettere in coda la segnalazione', 'error');
+  } finally {
+    occupato(false);
+  }
+}
 
 /** Registrato da app.js: il change su input file non passa dal bus delle azioni. */
 export function collegaInputFoto() {

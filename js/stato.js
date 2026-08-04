@@ -14,6 +14,9 @@ export const stato = {
   dati: null,       // risultato di api.caricaTutto()
   vista: 'classifica',
   bozza: {},        // campi di form da conservare fra un ridisegno e l'altro
+  coda: [],         // eventi segnati senza rete, in attesa di partire
+  senzaRete: false, // si sta guardando la copia salvata, non il database
+  datiDel: null,    // quando risale quella copia
 };
 
 /** Riempito da app.js all'avvio: permette alle viste di navigare e ridisegnare. */
@@ -21,6 +24,7 @@ export const bus = {
   disegna: () => {},
   ricarica: async () => {},
   vaiA: () => {},
+  ricaricaCoda: async () => {},
 };
 
 const CHIAVE_CAMP = 'fantamontelago.camp';
@@ -165,4 +169,29 @@ export function regoleProposte() {
 /** Quante cose aspettano un giudizio, per il contatore sulla scheda Proposte. */
 export function totaleInAttesa() {
   return proposteInAttesa().length + regoleProposte().length;
+}
+
+// ------------------------------------------------------------------
+// La coda di chi ha segnato senza campo
+// ------------------------------------------------------------------
+
+/**
+ * Le segnalazioni in attesa di questo accampamento.
+ *
+ * La coda vive in IndexedDB, che si legge solo in modo asincrono, mentre le
+ * viste disegnano di colpo restituendo una stringa: per questo app.js ne
+ * tiene qui una copia in memoria, rinfrescata a ogni cambiamento.
+ */
+export function codaQui() {
+  return (stato.coda || []).filter((v) => v.accampamentoId === stato.campId);
+}
+
+/** Quelle che partiranno da sole appena torna la linea. */
+export function codaInPartenza() {
+  return codaQui().filter((v) => !v.bloccata);
+}
+
+/** Quelle respinte dal database, che aspettano una decisione di chi le ha scritte. */
+export function codaBloccata() {
+  return codaQui().filter((v) => v.bloccata);
 }

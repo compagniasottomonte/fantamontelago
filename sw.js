@@ -7,7 +7,7 @@
 
 // Cambiando questo numero si svuota la copia vecchia. Va alzato quando si
 // pubblica una modifica che deve arrivare subito a tutti.
-const VERSIONE = 'fanta-montelago-v1';
+const VERSIONE = 'fanta-montelago-v2';
 
 const GUSCIO = [
   './',
@@ -22,7 +22,9 @@ const GUSCIO = [
   './js/app.js',
   './js/api.js',
   './js/card.js',
+  './js/coda.js',
   './js/config.js',
+  './js/locale.js',
   './js/stato.js',
   './js/titoli.js',
   './js/ui.js',

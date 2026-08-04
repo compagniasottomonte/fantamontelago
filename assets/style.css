@@ -204,6 +204,10 @@ h2.giorno { text-transform: none; letter-spacing: .02em; font-size: 1.1rem; }
 }
 .banner.ok { border-color: var(--gold); color: var(--gold2); }
 
+/* Senza campo si guarda una copia vecchia: deve vedersi al primo sguardo,
+ * altrimenti si scambia per la classifica vera. */
+.banner.senza-rete { border-color: var(--red); color: var(--txt); }
+
 .card.finale { border-color: var(--gold); background: var(--card2); }
 .card.finale h3 { color: var(--gold); }
 

@@ -5,8 +5,10 @@
 // Autore:   Daniele Polucci
 
 import * as api from '../api.js';
+import * as coda from '../coda.js';
 import { esc, toast, occupato, conferma } from '../ui.js';
 import { stato, bus, ricordaCamp } from '../stato.js';
+import { dimenticaLocale } from '../locale.js';
 
 let elenco = [];
 let caricato = false;
@@ -17,7 +19,18 @@ export async function carica() {
 }
 
 export function render() {
-  if (!caricato) return '<div class="empty">Carico...</div>';
+  if (!caricato) {
+    // Qui l'elenco arriva solo dal database: senza linea non c'e' ripiego che
+    // tenga, ma dirlo e' meglio di un "Carico..." che non finisce mai.
+    if (!navigator.onLine) {
+      return `<div class="empty">
+        <p>📴 <b>Nessuna linea.</b></p>
+        <p>L'elenco degli accampamenti si può leggere solo online.</p>
+        <p class="muted">Se ne avevi già aperto uno, torna qui appena hai campo.</p>
+      </div>`;
+    }
+    return '<div class="empty">Carico...</div>';
+  }
 
   const lista = elenco.map((a) => `
     <button class="card riga-camp" data-act="apri-camp" data-id="${a.id}">
@@ -122,9 +135,20 @@ export const azioni = {
   },
 
   async logout() {
-    if (!conferma('Vuoi uscire dall\'account?')) return;
+    // Le segnalazioni in attesa non hanno ancora un autore nel database: chi
+    // le spedisce se le ritrova intestate. Uscendo vanno buttate, e chi esce
+    // deve saperlo prima, non dopo.
+    const inAttesa = stato.coda.length;
+    if (inAttesa && !conferma(
+      `Hai ${inAttesa} ${inAttesa === 1 ? 'segnalazione' : 'segnalazioni'} non ancora inviate: `
+      + 'uscendo si perdono. Se hai campo, torna indietro e mandale prima.\n\nUscire lo stesso?'
+    )) return;
+    if (!inAttesa && !conferma('Vuoi uscire dall\'account?')) return;
+
+    for (const voce of stato.coda) await coda.dimentica(voce.id).catch(() => {});
     await api.esci();
     ricordaCamp(null);
+    dimenticaLocale();
     window.location.reload();
   },
 };
