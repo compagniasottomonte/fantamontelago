@@ -34,7 +34,7 @@ js/config.js          credenziali Supabase (la chiave pubblica sta nel codice)
 js/api.js             unico punto di contatto col database
 js/stato.js           stato condiviso e calcoli derivati (classifica, titoli, stagione)
 js/titoli.js          soprannomi automatici, riconosciuti per parole chiave
-js/card.js            immagini condivisibili su tela 1080x1920
+js/card.js            immagini condivisibili 1080x1920: evento, recap, poster
 js/app.js             router, smistamento dei click, avvio
 js/views/*.js         una schermata per file, ognuna esporta render() e azioni
 supabase/schema.sql   tabelle, policy, trigger, funzioni: rieseguibile senza danni
@@ -95,6 +95,16 @@ Punto di ripristino sicuro: etichetta `v1.0-stabile` e ramo `stabile`.
   campi distinti.
 - **Le card non si disegnano con immagini di altri domini** senza scaricarle
   prima come dati grezzi, altrimenti il browser rifiuta di esportare la tela.
+- **`createImageBitmap` fallisce su certe foto di fotocamera** con "The source
+  image could not be decoded", pur trattandosi di immagini che il browser mostra
+  benissimo. In `js/ui.js` c'è il ripiego sul decodificatore classico: non
+  toglierlo. Stesso file: i tipi MIME vuoti vanno accettati, certe gallerie
+  Android non li dichiarano.
+- **La card è verticale 9:16 e ritagliare per riempirla costa caro.**
+  `disegnaFondoConFoto()` decide guardando *quanta immagine andrebbe persa*
+  (soglia 18%), non le proporzioni: una foto 3:4, la più comune da telefono,
+  perderebbe un quarto della larghezza. Oltre soglia si mette la foto intera al
+  centro con dietro la stessa foto sfocata.
 
 ## Come si verifica
 
@@ -113,9 +123,21 @@ funzionano dal vivo. I due modelli di mail (*Magic Link* e *Confirm signup*)
 sono stati adattati e contengono il codice a sei cifre. L'**SMTP** è stato
 collegato: le email non passano più dal servizio incluso in Supabase.
 
+L'app è **installabile** (service worker in `sw.js`) e la guida
+all'installazione, con le schermate per Android e le istruzioni a parole per
+iPhone, sta nel pannello che si apre dalla schermata di accesso.
+
+Non c'è nulla in sospeso lato Daniele: ogni migrazione è stata eseguita.
+
 ## Cosa resta aperto
 
 - **Poster dell'accampamento con le tende**: i nomi sulle tende, la bandiera, i
   punteggi. Idea originale di Daniele, mai realizzata.
 - **Guida illustrata per iPhone**: le istruzioni iOS sono a parole, servirebbe
-  una registrazione da un iPhone per fare le schermate.
+  una registrazione da un iPhone per fare le schermate. Il procedimento per
+  ricavarle da un video è collaudato: si riproduce il video e si catturano i
+  fotogrammi durante la riproduzione, salvandoli con un piccolo ricevitore HTTP
+  locale invece di farli passare per la chat.
+- **Coda offline**: al festival la rete manca, e oggi senza connessione si può
+  solo consultare. Salvare gli eventi sul telefono e inviarli al ritorno della
+  linea sarebbe la cosa che serve di più, più di qualunque abbellimento.
